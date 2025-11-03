@@ -45,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
         </div>
         <div className="mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
-            <p>&copy; {new Date().getFullYear()} AI PDF Toolkit. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} LOLOPDF. All rights reserved.</p>
         </div>
       </div>
     </footer>

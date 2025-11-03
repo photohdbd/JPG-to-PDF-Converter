@@ -19,6 +19,11 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { TermsOfServicePage } from './pages/TermsOfServicePage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { CookiePolicyPage } from './pages/CookiePolicyPage';
+import { PdfToJpgPage } from './pages/PdfToJpgPage';
+import { AddPageNumbersPage } from './pages/AddPageNumbersPage';
+import { PdfToWordPage } from './pages/PdfToWordPage';
+import { PdfToExcelPage } from './pages/PdfToExcelPage';
+import { PdfToPowerpointPage } from './pages/PdfToPowerpointPage';
 
 export type Page =
   | 'home'
@@ -35,6 +40,11 @@ export type Page =
   | 'rotate'
   | 'protect'
   | 'unlock'
+  | 'pdf-to-jpg'
+  | 'add-page-numbers'
+  | 'pdf-to-word'
+  | 'pdf-to-excel'
+  | 'pdf-to-powerpoint'
   | 'all-tools'
   | 'pricing'
   | 'contact'
@@ -78,6 +88,13 @@ const App: React.FC = () => {
       case 'rotate': return <RotatePdfPage onNavigate={navigate} />;
       case 'protect': return <ProtectPdfPage onNavigate={navigate} />;
       case 'unlock': return <UnlockPdfPage onNavigate={navigate} />;
+
+      // New Tools
+      case 'pdf-to-jpg': return <PdfToJpgPage onNavigate={navigate} />;
+      case 'add-page-numbers': return <AddPageNumbersPage onNavigate={navigate} />;
+      case 'pdf-to-word': return <PdfToWordPage onNavigate={navigate} />;
+      case 'pdf-to-excel': return <PdfToExcelPage onNavigate={navigate} />;
+      case 'pdf-to-powerpoint': return <PdfToPowerpointPage onNavigate={navigate} />;
       
       // Static/info pages
       case 'all-tools': return <HomePage onNavigate={navigate} />;

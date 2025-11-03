@@ -9,10 +9,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   return (
     <header className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-20 shadow-lg">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('home')}>
-          <img src="/favicon.svg" alt="AI PDF Toolkit Logo" className="w-8 h-8"/>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('home')}>
+          <img src="/favicon.svg" alt="LOLOPDF Logo" className="w-10 h-10"/>
           <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary text-transparent bg-clip-text">
-            AI PDF Toolkit
+            LOLOPDF
           </h1>
         </div>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300">
