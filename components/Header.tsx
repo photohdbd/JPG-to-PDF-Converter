@@ -33,12 +33,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             <button onClick={() => onNavigate('home')} className="hover:text-white transition-colors">Home</button>
             <button onClick={() => onNavigate('all-tools')} className="hover:text-white transition-colors">All Tools</button>
             <button onClick={() => onNavigate('pricing')} className="hover:text-white transition-colors">Pricing</button>
+            {currentUser && <button onClick={() => onNavigate('dashboard')} className="hover:text-white transition-colors">Dashboard</button>}
             <button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors">Contact</button>
         </nav>
         <div className="hidden md:flex items-center gap-3">
             {currentUser ? (
               <>
-                <span className="text-sm text-gray-400 hidden lg:block" title={currentUser.email || ''}>{currentUser.email}</span>
+                <span className="text-sm text-gray-400 hidden lg:block" title={currentUser.email || ''}>{currentUser.displayName || currentUser.email}</span>
+                {currentUser.photoURL && <img src={currentUser.photoURL} alt="Profile" className="w-8 h-8 rounded-full" />}
                 <button onClick={handleLogout} className="px-4 py-2 text-sm font-semibold rounded-md hover:bg-gray-800 transition-colors">Logout</button>
               </>
             ) : (

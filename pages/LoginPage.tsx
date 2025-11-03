@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Page } from '../App';
-import { auth } from '../firebase';
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { AlertTriangleIcon } from '../components/Icons';
+import { auth, googleProvider } from '../firebase';
+import { signInWithEmailAndPassword, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { AlertTriangleIcon, GoogleIcon } from '../components/Icons';
 
 interface LoginPageProps {
   onNavigate: (page: Page) => void;
@@ -13,6 +13,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +27,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
     }
     setLoading(false);
   };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setError('');
+    try {
+        await signInWithPopup(auth, googleProvider);
+        onNavigate('home');
+    } catch (error) {
+        setError("Failed to sign in with Google. Please try again.");
+    }
+    setGoogleLoading(false);
+  }
 
   return (
     <div className="w-full max-w-md">
@@ -66,12 +79,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="w-full bg-brand-primary text-white font-bold py-3 rounded-lg hover:bg-brand-secondary transition-colors disabled:bg-gray-600"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+
+        <div className="my-4 flex items-center">
+            <div className="flex-grow border-t border-gray-600"></div>
+            <span className="flex-shrink mx-4 text-gray-400">OR</span>
+            <div className="flex-grow border-t border-gray-600"></div>
+        </div>
+
+        <button
+            onClick={handleGoogleSignIn}
+            disabled={loading || googleLoading}
+            className="w-full bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition-colors disabled:bg-gray-600 flex items-center justify-center gap-2"
+        >
+            <GoogleIcon className="w-5 h-5" />
+            {googleLoading ? 'Signing in...' : 'Sign in with Google'}
+        </button>
+
         <p className="text-center text-gray-400 text-sm mt-6">
           Don't have an account?{' '}
           <button onClick={() => onNavigate('signup')} className="text-brand-secondary hover:underline font-semibold">

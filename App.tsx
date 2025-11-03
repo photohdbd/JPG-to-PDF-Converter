@@ -26,6 +26,10 @@ import { PdfToExcelPage } from './pages/PdfToExcelPage';
 import { PdfToPowerpointPage } from './pages/PdfToPowerpointPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { PricingPage } from './pages/PricingPage';
+import { CheckoutPage } from './pages/CheckoutPage';
+import { useAuth } from './contexts/AuthContext';
 
 export type Page =
   | 'home'
@@ -58,22 +62,36 @@ export type Page =
   | 'cookies'
   | 'help'
   | 'api_docs'
-  | 'github';
+  | 'github'
+  | 'dashboard'
+  | 'checkout';
 
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [pageState, setPageState] = useState<any>(null);
+  const { currentUser } = useAuth();
 
-  const navigate = (page: Page) => {
+  const navigate = (page: Page, state: any = null) => {
     if (page === 'github') {
         window.open('https://github.com/example/ai-pdf-toolkit', '_blank');
         return;
     }
     setCurrentPage(page);
+    setPageState(state);
     window.scrollTo(0, 0);
   };
 
   const renderContent = () => {
+    // Protected Routes
+    if (currentPage === 'dashboard' && !currentUser) {
+       return <LoginPage onNavigate={navigate} />;
+    }
+     if (currentPage === 'checkout' && !currentUser) {
+       return <LoginPage onNavigate={navigate} />;
+    }
+
+
     switch (currentPage) {
       case 'converter': return <ConverterPage onNavigate={navigate} />;
       case 'jpg-to-pdf': return <JpgToPdfPage onNavigate={navigate} />;
@@ -98,12 +116,16 @@ const App: React.FC = () => {
       case 'pdf-to-excel': return <PdfToExcelPage onNavigate={navigate} />;
       case 'pdf-to-powerpoint': return <PdfToPowerpointPage onNavigate={navigate} />;
       
-      // Static/info pages
-      case 'all-tools': return <HomePage onNavigate={navigate} />;
-      case 'pricing': return <PlaceholderPage title="Pricing Plans" />;
-      case 'contact': return <PlaceholderPage title="Contact Us" />;
+      // App pages
+      case 'pricing': return <PricingPage onNavigate={navigate} />;
       case 'login': return <LoginPage onNavigate={navigate} />;
       case 'signup': return <SignupPage onNavigate={navigate} />;
+      case 'dashboard': return <DashboardPage onNavigate={navigate} />;
+      case 'checkout': return <CheckoutPage onNavigate={navigate} {...pageState} />;
+
+      // Static/info pages
+      case 'all-tools': return <HomePage onNavigate={navigate} />;
+      case 'contact': return <PlaceholderPage title="Contact Us" />;
       case 'about': return <PlaceholderPage title="About Us" />;
       case 'terms': return <TermsOfServicePage onNavigate={navigate} />;
       case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;
