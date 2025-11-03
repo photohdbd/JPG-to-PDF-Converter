@@ -1,0 +1,5 @@
+{
+  "name": "JPG to PDF Converter",
+  "description": "An easy-to-use tool to instantly convert JPG images into a single, downloadable PDF file. Select your images, reorder them if needed, and get your PDF in seconds.",
+  "requestFramePermissions": []
+}
