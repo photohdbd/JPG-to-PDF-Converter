@@ -30,15 +30,15 @@ const PreviewCard: React.FC<{
             onDragEnter={(e) => !isUnsupported && onDragEnter(e, index)}
             onDragEnd={onDragEnd}
             onDragOver={(e) => e.preventDefault()}
-            className={`relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 transition-all duration-300 ${isDraggedOver ? 'border-brand-primary scale-105' : 'border-transparent'} ${isUnsupported ? '!border-red-700' : ''}`}
+            className={`relative group bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 transition-all duration-300 ${isDraggedOver ? 'border-brand-primary scale-105' : 'border-transparent'} ${isUnsupported ? '!border-red-700' : ''}`}
         >
             {appFile.type === 'image' && appFile.previewUrl && (
                 <img src={appFile.previewUrl} alt={appFile.file.name} className="w-full h-32 object-cover" />
             )}
             {appFile.type === 'text' && (
-                <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-700 p-2">
-                    <FileIcon className="w-12 h-12 text-gray-400" />
-                    <span className="text-xs text-gray-500 mt-2 uppercase">{appFile.file.name.split('.').pop()}</span>
+                <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-300 dark:bg-gray-700 p-2">
+                    <FileIcon className="w-12 h-12 text-gray-500 dark:text-gray-400" />
+                    <span className="text-xs text-gray-600 dark:text-gray-500 mt-2 uppercase">{appFile.file.name.split('.').pop()}</span>
                 </div>
             )}
             {isUnsupported && (
@@ -57,7 +57,7 @@ const PreviewCard: React.FC<{
                     <TrashIcon className="w-5 h-5" />
                 </button>
             </div>
-            <div className="p-2 text-xs text-gray-300 truncate" title={appFile.file.name}>
+            <div className="p-2 text-xs text-gray-600 dark:text-gray-300 truncate" title={appFile.file.name}>
                 {appFile.file.name}
             </div>
         </div>
@@ -119,19 +119,19 @@ export const ImagePreviewGrid: React.FC<ImagePreviewGridProps> = ({
           />
         ))}
       </div>
-      <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-4">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-300 dark:border-gray-700 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-4 shadow-2xl">
         <div className="flex items-center gap-4">
-            <button onClick={onAddMore} className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors">
+            <button onClick={onAddMore} className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-semibold rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                 <PlusIcon className="w-5 h-5"/> Add More
             </button>
-            <button onClick={onClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-800 text-white font-semibold rounded-md hover:bg-red-700 transition-colors">
+            <button onClick={onClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-700 dark:bg-red-800 text-white font-semibold rounded-md hover:bg-red-600 dark:hover:bg-red-700 transition-colors">
                 <XIcon className="w-5 h-5"/> Clear All
             </button>
         </div>
         <button
           onClick={onConvertToPdf}
           disabled={isConverting || supportedFilesCount === 0}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-all duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-all duration-300 disabled:bg-gray-500 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105"
         >
           {isConverting ? 'Converting...' : `Convert ${supportedFilesCount} File(s)`}
           {!isConverting && supportedFilesCount > 0 && <ArrowRightIcon className="w-5 h-5"/>}

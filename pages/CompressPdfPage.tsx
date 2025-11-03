@@ -174,11 +174,11 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
       const details = (
         <div className="space-y-2">
             <p><strong>Original Size:</strong> <span className="font-mono">{formatBytes(result.originalSize)}</span></p>
-            <p><strong>New Size:</strong> <span className="font-mono text-green-400">{formatBytes(result.newSize)}</span></p>
-            <p><strong>Reduction:</strong> <span className="font-mono font-bold text-green-400">{reduction > 0 ? `${reduction}%` : '< 1%'}</span></p>
+            <p><strong>New Size:</strong> <span className="font-mono text-green-600 dark:text-green-400">{formatBytes(result.newSize)}</span></p>
+            <p><strong>Reduction:</strong> <span className="font-mono font-bold text-green-600 dark:text-green-400">{reduction > 0 ? `${reduction}%` : '< 1%'}</span></p>
         </div>
       );
-      return <DownloadScreen pdfUrl={result.url} onStartOver={reset} fileName="compressed.pdf" details={details} />;
+      return <DownloadScreen files={[{url: result.url, name: "compressed.pdf"}]} onStartOver={reset} details={details} />;
     }
 
     if (pdfFile) {
@@ -196,7 +196,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
             <button
               onClick={handleCompressPdf}
               disabled={isProcessing}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-all duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-all duration-300 disabled:bg-gray-500 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105"
             >
               Compress PDF <ArrowRightIcon className="w-5 h-5" />
             </button>
@@ -212,12 +212,12 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
     <div className="w-full max-w-4xl flex flex-col">
         <BackButton onClick={() => onNavigate('home')} />
         <div className="w-full flex flex-col items-center justify-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Compress PDF</h1>
-            <p className="text-md md:text-lg text-gray-400 mb-8 max-w-xl text-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Compress PDF</h1>
+            <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">
                 Reduce the file size of your PDF while optimizing for the best quality.
             </p>
             {error && (
-                <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
+                <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3" />
                 <span className="block sm:inline">{error}</span>
                 <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
@@ -227,7 +227,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
             )}
             {isProcessing && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <LoaderIcon />
                 <p className="text-xl text-white mt-4">Compressing PDF...</p>
                 <p className="text-md text-gray-300 mt-2">{processingProgress}</p>
                 </div>

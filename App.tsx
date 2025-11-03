@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomePage } from './pages/HomePage';
@@ -30,6 +30,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { PricingPage } from './pages/PricingPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { useAuth } from './contexts/AuthContext';
+import { EditPdfPage } from './pages/EditPdfPage';
+import { AddPagesToPdfPage } from './pages/AddPagesToPdfPage';
 
 export type Page =
   | 'home'
@@ -51,6 +53,8 @@ export type Page =
   | 'pdf-to-word'
   | 'pdf-to-excel'
   | 'pdf-to-powerpoint'
+  | 'edit-pdf'
+  | 'add-pages-to-pdf'
   | 'all-tools'
   | 'pricing'
   | 'contact'
@@ -71,6 +75,20 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [pageState, setPageState] = useState<any>(null);
   const { currentUser } = useAuth();
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
 
   const navigate = (page: Page, state: any = null) => {
     if (page === 'github') {
@@ -108,6 +126,8 @@ const App: React.FC = () => {
       case 'rotate': return <RotatePdfPage onNavigate={navigate} />;
       case 'protect': return <ProtectPdfPage onNavigate={navigate} />;
       case 'unlock': return <UnlockPdfPage onNavigate={navigate} />;
+      case 'edit-pdf': return <EditPdfPage onNavigate={navigate} />;
+      case 'add-pages-to-pdf': return <AddPagesToPdfPage onNavigate={navigate} />;
 
       // New Tools
       case 'pdf-to-jpg': return <PdfToJpgPage onNavigate={navigate} />;
@@ -140,8 +160,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-900 font-sans">
-      <Header onNavigate={navigate} />
+    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
+      <Header onNavigate={navigate} theme={theme} toggleTheme={toggleTheme} />
       <main className="flex-grow container mx-auto px-4 py-8 md:py-12 flex flex-col items-center">
         {renderContent()}
       </main>

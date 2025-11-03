@@ -54,8 +54,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   const dragDropClasses = isDragging 
-    ? 'border-brand-primary bg-gray-800 scale-105' 
-    : 'border-gray-600 bg-gray-800/50';
+    ? 'border-brand-primary bg-gray-200 dark:bg-gray-800 scale-105' 
+    : 'border-gray-400 dark:border-gray-600 bg-gray-200/50 dark:bg-gray-800/50';
 
   return (
     <div className="w-full max-w-2xl text-center">
@@ -67,12 +67,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         onClick={handleFileClick}
         className={`relative flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 ${dragDropClasses} hover:border-brand-secondary`}
       >
-        <UploadCloudIcon className="w-16 h-16 mb-4 text-gray-500" />
-        <h2 className="text-xl sm:text-2xl font-bold text-white">{title}</h2>
-        <p className="text-gray-400 mt-2">or</p>
+        <UploadCloudIcon className="w-16 h-16 mb-4 text-gray-500 dark:text-gray-500" />
+        <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white">{title}</h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">or</p>
         <button
           type="button"
-          className="mt-4 px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg shadow-md hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-brand-primary transition-colors"
+          className="mt-4 px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg shadow-md hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-900 focus:ring-brand-primary transition-colors"
         >
           Select Files
         </button>
@@ -84,7 +84,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           className="hidden"
           onChange={handleFileChange}
         />
-        <p className="text-xs text-gray-500 mt-4">{description}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">{description}</p>
       </div>
     </div>
   );

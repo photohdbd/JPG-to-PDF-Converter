@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileUpload } from '../components/FileUpload';
 import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
@@ -6,7 +6,11 @@ import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 
 declare const pptx: any;
-declare const jspdf: any;
+
+interface ImageFile {
+    url: string;
+    name: string;
+}
 
 interface PowerpointToPdfPageProps {
   onNavigate: (page: Page) => void;
@@ -14,9 +18,16 @@ interface PowerpointToPdfPageProps {
 
 export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavigate }) => {
   const [isConverting, setIsConverting] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<ImageFile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
+
+  useEffect(() => {
+    return () => {
+        imageFiles.forEach(file => URL.revokeObjectURL(file.url));
+    };
+  }, [imageFiles]);
+
 
   const handleFileChange = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -42,40 +53,25 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
     setError(null);
 
     try {
-        const { jsPDF } = jspdf;
         const result = await new pptx.Presentation().loadFile(file);
         const numSlides = result.slides.length;
-        let doc: any = null;
+        const newImageFiles: ImageFile[] = [];
+        const baseName = file.name.replace(/\.pptx$/i, '');
+
 
         for (let i = 0; i < numSlides; i++) {
             setProgress(`Processing slide ${i + 1} of ${numSlides}...`);
             const slide = result.slides[i];
             const dataUrl = await slide.render("image");
+            const blob = await (await fetch(dataUrl)).blob();
 
-            const img = new Image();
-            img.src = dataUrl;
-
-            await new Promise<void>((resolve) => {
-                img.onload = () => {
-                    const orientation = img.width > img.height ? 'l' : 'p';
-                    if (!doc) {
-                        doc = new jsPDF(orientation, 'px', [img.width, img.height]);
-                    } else {
-                        doc.addPage([img.width, img.height], orientation);
-                    }
-                    doc.addImage(dataUrl, 'PNG', 0, 0, img.width, img.height);
-                    resolve();
-                }
+            newImageFiles.push({
+                url: URL.createObjectURL(blob),
+                name: `${baseName}-slide-${i+1}.png`
             });
         }
         
-        if(doc) {
-            const pdfBlob = doc.output('blob');
-            const url = URL.createObjectURL(pdfBlob);
-            setPdfUrl(url);
-        } else {
-             throw new Error("Could not create PDF document from presentation.");
-        }
+        setImageFiles(newImageFiles);
 
     } catch (err) {
         console.error(err);
@@ -88,7 +84,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
   
   const reset = () => {
     setIsConverting(false);
-    setPdfUrl(null);
+    setImageFiles([]);
     setError(null);
     setProgress('');
   };
@@ -97,12 +93,12 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
     <div className="w-full max-w-4xl flex flex-col">
         <BackButton onClick={() => onNavigate('home')} />
         <div className="w-full flex flex-col items-center justify-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">PowerPoint to PDF Converter</h1>
-            <p className="text-md md:text-lg text-gray-400 mb-8 max-w-2xl text-center">
-                Convert your PowerPoint (.pptx) presentations into PDF documents seamlessly.
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">PowerPoint to PDF Converter</h1>
+            <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-2xl text-center">
+                Convert your PowerPoint (.pptx) presentations into individual high-quality images, perfect for sharing or embedding.
             </p>
             {error && (
-            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
+            <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3" />
                 <span className="block sm:inline">{error}</span>
                 <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
@@ -112,14 +108,14 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
             )}
             {isConverting && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <LoaderIcon />
                 <p className="text-xl text-white mt-4">Converting Presentation...</p>
                 <p className="text-md text-gray-300 mt-2">{progress}</p>
             </div>
             )}
 
-            {pdfUrl ? (
-                <DownloadScreen pdfUrl={pdfUrl} onStartOver={reset} fileName="presentation.pdf" />
+            {imageFiles.length > 0 ? (
+                <DownloadScreen files={imageFiles} zipFileName="presentation-slides.zip" onStartOver={reset} />
             ) : (
                 <FileUpload 
                     onFilesSelect={handleFileChange}

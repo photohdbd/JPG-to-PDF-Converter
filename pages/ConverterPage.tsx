@@ -196,7 +196,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (pdfUrl) {
-      return <DownloadScreen pdfUrl={pdfUrl} onStartOver={reset} fileName="converted-files.pdf" />;
+      return <DownloadScreen files={[{ url: pdfUrl, name: 'converted-files.pdf' }]} onStartOver={reset} />;
     }
 
     if (appFiles.length > 0) {
@@ -220,7 +220,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
         <BackButton onClick={() => onNavigate('home')} />
         <div className="w-full flex flex-col items-center justify-center">
             {error && (
-            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
+            <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3" />
                 <span className="block sm:inline">{error}</span>
                 <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
@@ -230,7 +230,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
             )}
             {isConverting && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <LoaderIcon />
                 <p className="text-xl text-white mt-4">Converting to PDF...</p>
             </div>
             )}

@@ -63,20 +63,20 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
   };
   
   const renderOptions = () => (
-    <div className="w-full max-w-lg bg-gray-800 p-6 rounded-lg border border-gray-700 text-center">
+    <div className="w-full max-w-lg bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 text-center shadow-lg">
         <p className="text-lg font-bold mb-4">Set Password for {pdfFile?.file.name}</p>
         <input 
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full p-2 bg-gray-700 rounded mb-4"
+            className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-brand-primary"
             placeholder="Enter password"
         />
         <input 
             type="password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
-            className="w-full p-2 bg-gray-700 rounded mb-4"
+            className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-brand-primary"
             placeholder="Confirm password"
         />
         <button onClick={handleProcess} className="w-full bg-brand-primary text-white font-bold py-3 mt-2 rounded-lg hover:bg-brand-secondary">Protect PDF</button>
@@ -87,10 +87,10 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
     <div className="w-full max-w-4xl flex flex-col">
       <BackButton onClick={() => onNavigate('home')} />
       <div className="w-full flex flex-col items-center justify-center">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Protect PDF</h1>
-        <p className="text-md md:text-lg text-gray-400 mb-8 max-w-xl text-center">Add a password to your PDF to encrypt it and protect it from unauthorized access.</p>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Protect PDF</h1>
+        <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">Add a password to your PDF to encrypt it and protect it from unauthorized access.</p>
         {error && (
-            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-lg flex items-center shadow-lg">
+            <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-lg flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3" />
                 <span className="block sm:inline">{error}</span>
                 <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3"><span className="text-xl">×</span></button>
@@ -98,13 +98,13 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
         )}
         {isProcessing && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <LoaderIcon />
                 <p className="text-xl text-white mt-4">Encrypting PDF...</p>
             </div>
         )}
 
         {resultUrl ? (
-            <DownloadScreen pdfUrl={resultUrl} onStartOver={reset} fileName="protected.pdf" />
+            <DownloadScreen files={[{url: resultUrl, name: "protected.pdf"}]} onStartOver={reset} />
         ) : !pdfFile ? (
             <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
         ) : (

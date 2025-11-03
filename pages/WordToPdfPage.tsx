@@ -172,7 +172,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (pdfUrl) {
-      return <DownloadScreen pdfUrl={pdfUrl} onStartOver={reset} fileName="word-to-pdf.pdf" />;
+      return <DownloadScreen files={[{url: pdfUrl, name: "word-to-pdf.pdf"}]} onStartOver={reset} />;
     }
 
     if (docxFiles.length > 0) {
@@ -204,12 +204,12 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
     <div className="w-full max-w-4xl flex flex-col">
         <BackButton onClick={() => onNavigate('home')} />
         <div className="w-full flex flex-col items-center justify-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Word to PDF Converter</h1>
-            <p className="text-md md:text-lg text-gray-400 mb-8 max-w-2xl text-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Word to PDF Converter</h1>
+            <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-2xl text-center">
                 Convert Microsoft Word (.docx) documents to high-quality PDF files that preserve formatting.
             </p>
             {error && (
-            <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
+            <div className="bg-yellow-300/50 dark:bg-yellow-900/50 border border-yellow-500 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3 flex-shrink-0" />
                 <span className="block sm:inline">{error}</span>
                 <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
@@ -219,7 +219,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
             )}
             {isConverting && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <LoaderIcon />
                 <p className="text-xl text-white mt-4">Converting to PDF...</p>
             </div>
             )}

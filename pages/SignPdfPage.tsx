@@ -25,6 +25,7 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
 
   const signaturePadRef = useRef<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const signatureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -94,7 +95,6 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
     if (signatureMode === 'draw' && signaturePadRef.current && !signaturePadRef.current.isEmpty()) {
       setSignature(signaturePadRef.current.toDataURL('image/png'));
     } else if (signatureMode === 'type' && typedText) {
-        // Create image from text
         const canvas = document.createElement('canvas');
         canvas.width = 400;
         canvas.height = 150;
@@ -123,33 +123,34 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
   }
 
   const handleApplySignature = async (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!pdfFile || !signature) return;
+      if (!pdfFile || !signatureRef.current) return;
       
-      const target = e.target as HTMLElement;
-      const pageElement = target.closest('.pdf-page') as HTMLImageElement;
+      const pageElement = signatureRef.current.parentElement as HTMLElement;
       if (!pageElement) return;
 
       setIsProcessing(true);
 
       const pageNum = parseInt(pageElement.dataset.pageNumber || '0', 10);
-      const rect = pageElement.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const pageRect = pageElement.getBoundingClientRect();
+      const sigRect = signatureRef.current.getBoundingClientRect();
+      
+      const x = sigRect.left - pageRect.left;
+      const y = sigRect.top - pageRect.top;
 
       try {
           const { PDFDocument, png } = PDFLib;
           const pdfDoc = await PDFDocument.load(pdfFile.arrayBuffer);
-          const signatureImage = await pdfDoc.embedPng(signature);
+          const signatureImage = await pdfDoc.embedPng(signature as string);
           const pages = pdfDoc.getPages();
-          const targetPage = pages[pageNum - 1];
+          const targetPage = pages[pageNum];
 
-          const scale = targetPage.getWidth() / rect.width;
-          const sigWidth = 100 * scale; 
-          const sigHeight = (sigWidth * signatureImage.height) / signatureImage.width;
+          const scale = targetPage.getWidth() / pageRect.width;
+          const sigWidth = sigRect.width * scale; 
+          const sigHeight = sigRect.height * scale;
 
           targetPage.drawImage(signatureImage, {
-              x: x * scale - (sigWidth/2),
-              y: targetPage.getHeight() - (y * scale) - (sigHeight/2),
+              x: x * scale,
+              y: targetPage.getHeight() - (y * scale) - sigHeight,
               width: sigWidth,
               height: sigHeight,
           });
@@ -176,11 +177,11 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
   };
   
    const renderSignatureCreator = () => (
-      <div className="w-full max-w-2xl bg-gray-800 p-4 rounded-lg">
-          <div className="flex justify-center border-b border-gray-700 mb-4">
-              <button onClick={() => setSignatureMode('draw')} className={`px-4 py-2 ${signatureMode === 'draw' ? 'border-b-2 border-brand-primary text-white' : 'text-gray-400'}`}>Draw</button>
-              <button onClick={() => setSignatureMode('type')} className={`px-4 py-2 ${signatureMode === 'type' ? 'border-b-2 border-brand-primary text-white' : 'text-gray-400'}`}>Type</button>
-              <button onClick={() => setSignatureMode('upload')} className={`px-4 py-2 ${signatureMode === 'upload' ? 'border-b-2 border-brand-primary text-white' : 'text-gray-400'}`}>Upload</button>
+      <div className="w-full max-w-2xl bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex justify-center border-b border-gray-200 dark:border-gray-700 mb-4">
+              <button onClick={() => setSignatureMode('draw')} className={`px-4 py-2 ${signatureMode === 'draw' ? 'border-b-2 border-brand-primary text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Draw</button>
+              <button onClick={() => setSignatureMode('type')} className={`px-4 py-2 ${signatureMode === 'type' ? 'border-b-2 border-brand-primary text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Type</button>
+              <button onClick={() => setSignatureMode('upload')} className={`px-4 py-2 ${signatureMode === 'upload' ? 'border-b-2 border-brand-primary text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Upload</button>
           </div>
           {signatureMode === 'draw' && (
               <div className="bg-gray-200 rounded">
@@ -193,29 +194,86 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
                 type="text" 
                 value={typedText}
                 onChange={(e) => setTypedText(e.target.value)}
-                className="w-full p-4 text-3xl bg-gray-700 text-white rounded text-center"
+                className="w-full p-4 text-3xl bg-gray-100 dark:bg-gray-700 text-black dark:text-white rounded text-center"
                 style={{fontFamily: '"Homemade Apple", cursive'}}
                 placeholder="Type your name"
               />
           )}
           {signatureMode === 'upload' && (
-              <input type="file" accept="image/png" onChange={handleImageUpload} className="w-full p-4 bg-gray-700 text-white rounded"/>
+              <input type="file" accept="image/png" onChange={handleImageUpload} className="w-full p-4 bg-gray-100 dark:bg-gray-700 text-black dark:text-white rounded"/>
           )}
           {signatureMode !== 'upload' && <button onClick={handleSignatureCreation} className="w-full mt-4 bg-brand-primary text-white py-2 rounded">Create Signature</button>}
       </div>
   );
+  
+  const DraggableSignature: React.FC<{ pageIndex: number }> = ({ pageIndex }) => {
+    const [position, setPosition] = useState({ x: 100, y: 100 });
+    const [size, setSize] = useState({ width: 150, height: 75 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    
+    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      setIsDragging(true);
+    };
+
+    const handleResizeMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        setIsResizing(true);
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (isDragging) {
+                setPosition(prev => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }));
+            }
+            if(isResizing) {
+                setSize(prev => ({width: prev.width + e.movementX, height: prev.height + e.movementY}));
+            }
+        };
+        const handleMouseUp = () => {
+            setIsDragging(false);
+            setIsResizing(false);
+        };
+
+        if(isDragging || isResizing) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        }
+    }, [isDragging, isResizing]);
+
+    return (
+        <div 
+            ref={signatureRef}
+            className="absolute border-2 border-dashed border-brand-primary cursor-move p-1"
+            style={{ left: position.x, top: position.y, width: size.width, height: size.height }}
+            onMouseDown={handleMouseDown}
+        >
+            <img src={signature!} alt="signature" className="w-full h-full" draggable={false}/>
+            <div 
+                className="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-primary rounded-full cursor-se-resize"
+                onMouseDown={handleResizeMouseDown}
+            ></div>
+        </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl flex flex-col">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Homemade+Apple&display=swap');`}</style>
       <BackButton onClick={() => onNavigate('home')} />
       <div className="w-full flex flex-col items-center justify-center">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Sign PDF</h1>
-        <p className="text-md md:text-lg text-gray-400 mb-8 max-w-xl text-center">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Sign PDF</h1>
+        <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">
             Create your signature and place it anywhere on your document.
         </p>
          {error && (
-            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
+            <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3" />
                 <span className="block sm:inline">{error}</span>
                 <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3"><span className="text-xl">×</span></button>
@@ -223,35 +281,36 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
         )}
         {isProcessing && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <LoaderIcon />
                 <p className="text-xl text-white mt-4">Processing...</p>
             </div>
         )}
 
         {resultUrl ? (
-            <DownloadScreen pdfUrl={resultUrl} onStartOver={reset} fileName="signed.pdf" />
+            <DownloadScreen files={[{url: resultUrl, name: "signed.pdf"}]} onStartOver={reset} />
         ) : !pdfFile ? (
             <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
         ) : !signature ? (
              renderSignatureCreator()
         ) : (
           <div className="w-full flex flex-col items-center">
-              <h2 className="text-xl font-bold mb-2">Click on the document to place your signature</h2>
-              <p className="text-gray-400 mb-4">Your signature:</p>
-              <img src={signature} alt="Your signature" className="h-20 bg-white p-2 rounded border mb-4"/>
-              <div className="w-full max-w-4xl border-4 border-gray-700 rounded-lg overflow-y-auto max-h-[70vh] p-4 bg-gray-900">
+              <h2 className="text-xl font-bold mb-2 text-black dark:text-white">Drag and resize your signature, then click Apply.</h2>
+              <div className="w-full max-w-4xl border-4 border-gray-300 dark:border-gray-700 rounded-lg overflow-y-auto max-h-[70vh] p-4 bg-gray-200 dark:bg-gray-900 space-y-4">
                   {pages.map((dataUrl, index) => (
-                      <div key={index} className="relative mb-4 cursor-pointer" onClick={handleApplySignature}>
+                      <div key={index} className="relative shadow-lg" data-page-number={index}>
                           <img 
                               src={dataUrl} 
                               alt={`Page ${index + 1}`} 
-                              data-page-number={index + 1}
-                              className="w-full h-auto pdf-page"
+                              className="w-full h-auto"
                           />
+                           <DraggableSignature pageIndex={index} />
                       </div>
                   ))}
               </div>
-               <button onClick={reset} className="mt-4 px-6 py-2 bg-red-800 text-white font-semibold rounded-md hover:bg-red-700">Start Over</button>
+               <div className="flex items-center gap-4 mt-4">
+                 <button onClick={() => { setSignature(null); }} className="px-6 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-500">Change Signature</button>
+                 <button onClick={handleApplySignature} className="px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary">Apply Signature & Download</button>
+               </div>
           </div>
         )}
       </div>

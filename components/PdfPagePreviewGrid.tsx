@@ -20,7 +20,7 @@ const PreviewCard: React.FC<{
     return (
         <div
             onClick={() => onToggleSelect(page.pageNum)}
-            className={`relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 transition-all duration-300 cursor-pointer ${page.selected ? 'border-red-500' : 'border-transparent hover:border-brand-primary'}`}
+            className={`relative group bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 transition-all duration-300 cursor-pointer ${page.selected ? 'border-red-500' : 'border-transparent hover:border-brand-primary'}`}
         >
             <img src={page.dataUrl} alt={`Page ${page.pageNum}`} className="w-full h-auto object-contain" />
             
@@ -51,7 +51,7 @@ export const PdfPagePreviewGrid: React.FC<PdfPagePreviewGridProps> = ({
   
   return (
     <div className="w-full max-w-6xl">
-       <p className="text-center text-gray-400 mb-6">Click on the pages you want to remove.</p>
+       <p className="text-center text-gray-500 dark:text-gray-400 mb-6">Click on the pages you want to remove.</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-8">
         {pages.map((page) => (
           <PreviewCard
@@ -61,22 +61,22 @@ export const PdfPagePreviewGrid: React.FC<PdfPagePreviewGridProps> = ({
           />
         ))}
       </div>
-      <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky bottom-4">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-300 dark:border-gray-700 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky bottom-4 shadow-2xl">
         <div className="flex flex-wrap items-center gap-2">
-            <button onClick={onInvertSelection} className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors" title="Invert Selection">
+            <button onClick={onInvertSelection} className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-semibold rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors" title="Invert Selection">
                 <Layers2Icon className="w-5 h-5"/> <span>Invert</span>
             </button>
-            <button onClick={onClearSelection} className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors" title="Clear Selection">
+            <button onClick={onClearSelection} className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-black dark:text-white font-semibold rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors" title="Clear Selection">
                 <XSquareIcon className="w-5 h-5"/> <span>Clear</span>
             </button>
-            <button onClick={onReset} className="flex items-center gap-2 px-3 py-2 text-sm bg-red-800 text-white font-semibold rounded-md hover:bg-red-700 transition-colors" title="Start Over">
+            <button onClick={onReset} className="flex items-center gap-2 px-3 py-2 text-sm bg-red-700 dark:bg-red-800 text-white font-semibold rounded-md hover:bg-red-600 dark:hover:bg-red-700 transition-colors" title="Start Over">
                 <RefreshCwIcon className="w-5 h-5"/> <span>Reset</span>
             </button>
         </div>
         <button
           onClick={onProcess}
           disabled={isProcessing || selectedCount === 0}
-          className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-all duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105"
+          className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-all duration-300 disabled:bg-gray-500 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105"
         >
           {isProcessing ? 'Creating PDF...' : `Remove ${selectedCount} Page(s)`}
           {!isProcessing && selectedCount > 0 && <ArrowRightIcon className="w-5 h-5"/>}

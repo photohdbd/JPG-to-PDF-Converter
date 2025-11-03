@@ -176,7 +176,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (splitPdfUrl) {
-      return <DownloadScreen pdfUrl={splitPdfUrl} onStartOver={reset} fileName="split.pdf" />;
+      return <DownloadScreen files={[{url: splitPdfUrl, name: "split.pdf"}]} onStartOver={reset} />;
     }
     if (pages.length > 0) {
       return (
@@ -198,12 +198,12 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
     <div className="w-full max-w-6xl flex flex-col">
         <BackButton onClick={() => onNavigate('home')} />
         <div className="w-full flex flex-col items-center justify-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Split PDF</h1>
-            <p className="text-md md:text-lg text-gray-400 mb-8 max-w-xl text-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Split PDF</h1>
+            <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">
                 Remove one or more pages from a PDF document. Click on pages to select them for removal.
             </p>
             {error && (
-            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
+            <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3" />
                 <span className="block sm:inline">{error}</span>
                 <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
@@ -213,7 +213,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
             )}
             {(isProcessing || isSplitting) && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <LoaderIcon />
                 <p className="text-xl text-white mt-4">
                 {isProcessing ? "Rendering PDF pages..." : "Creating your new PDF..."}
                 </p>
