@@ -6,6 +6,7 @@ import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 
 declare const pdfjsLib: any;
+declare const JSZip: any;
 
 interface JpgResult {
   url: string;
@@ -18,6 +19,7 @@ interface PdfToJpgPageProps {
 
 export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
   const [results, setResults] = useState<JpgResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
@@ -87,21 +89,41 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleDownloadAll = () => {
-    results.forEach((result, index) => {
-      setTimeout(() => {
+  const handleDownloadAll = async () => {
+    if (results.length === 0) return;
+    setIsZipping(true);
+    try {
+        const zip = new JSZip();
+        const baseName = results[0].name.replace(/-page-1\.jpg$/i, '');
+
+        await Promise.all(results.map(async (result) => {
+            const response = await fetch(result.url);
+            const blob = await response.blob();
+            zip.file(result.name, blob);
+        }));
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const zipUrl = URL.createObjectURL(zipBlob);
+
         const a = document.createElement('a');
-        a.href = result.url;
-        a.download = result.name;
+        a.href = zipUrl;
+        a.download = `${baseName}.zip`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-      }, index * 100); // Stagger downloads
-    });
+        URL.revokeObjectURL(zipUrl);
+
+    } catch (err) {
+        console.error("Failed to create zip file", err);
+        setError("Sorry, there was an issue creating the zip file.");
+    } finally {
+        setIsZipping(false);
+    }
   };
   
   const reset = () => {
     setIsProcessing(false);
+    setIsZipping(false);
     setResults([]);
     setError(null);
     setProgress('');
@@ -124,8 +146,12 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
              <button onClick={reset} className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors">
                 Convert Another PDF
             </button>
-            <button onClick={handleDownloadAll} className="px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-colors">
-                Download All JPGs
+            <button
+                onClick={handleDownloadAll}
+                disabled={isZipping}
+                className="w-full sm:w-auto flex items-center justify-center px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+            >
+                {isZipping ? 'Zipping...' : 'Download All as .zip'}
             </button>
         </div>
     </div>
