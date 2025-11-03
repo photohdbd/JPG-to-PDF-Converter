@@ -1,5 +1,6 @@
 import React from 'react';
 import { Page } from '../App';
+import { FileTextIcon } from './Icons';
 
 interface HeaderProps {
     onNavigate: (page: Page) => void;
@@ -10,7 +11,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     <header className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-20 shadow-lg">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('home')}>
-          <img src="/favicon.svg" alt="LOLOPDF Logo" className="w-10 h-10"/>
+          <FileTextIcon className="w-10 h-10 text-brand-primary"/>
           <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary text-transparent bg-clip-text">
             LOLOPDF
           </h1>

@@ -1,30 +1,41 @@
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
 <defs>
-    <linearGradient id="doc-grad" x1="20" y1="12" x2="108" y2="116" gradientUnits="userSpaceOnUse">
+    <!-- Main gradient for the document icon -->
+    <linearGradient id="doc-gradient" x1="16" y1="14" x2="104" y2="106" gradientUnits="userSpaceOnUse">
         <stop stop-color="#FF8A5C"/>
         <stop offset="1" stop-color="#E84A70"/>
     </linearGradient>
-    <filter id="icon-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.15"/>
+
+    <!-- Shadow for the document icon -->
+    <filter id="icon-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="1" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.2"/>
     </filter>
-     <filter id="text-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="1" dy="2" stdDeviation="1" flood-color="#000000" flood-opacity="0.25"/>
+
+    <!-- White glow/shadow for the text -->
+    <filter id="text-shadow-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="1" stdDeviation="2.5" flood-color="#FFFFFF" flood-opacity="0.9"/>
     </filter>
 </defs>
 
-<!-- Document Icon -->
+<!-- Document Icon with multiple layers for depth -->
 <g filter="url(#icon-shadow)">
-    <!-- Main shape -->
-    <path d="M24 16C19.5817 16 16 19.5817 16 24V96C16 100.418 19.5817 104 24 104H74L104 76V24C104 19.5817 100.418 16 96 16H24Z" fill="url(#doc-grad)"/>
-    <!-- Fold -->
-    <path d="M74 16V76H104L74 16Z" fill="#FFC3B1" opacity="0.7"/>
+    <!-- Back layer (darker shade for depth) -->
+    <path d="M26 18C20.4772 18 16 22.4772 16 28V100C16 105.523 20.4772 110 26 110H74L104 82V28C104 22.4772 99.5228 18 94 18H26Z" fill="#B3234F"/>
+    
+    <!-- Middle layer -->
+    <path d="M26 16C20.4772 16 16 20.4772 16 26V98C16 103.523 20.4772 108 26 108H74L104 80V26C104 20.4772 99.5228 16 94 16H26Z" fill="#D02C4D"/>
+    
+    <!-- Top layer with gradient -->
+    <path d="M26 14C20.4772 14 16 18.4772 16 24V96C16 101.523 20.4772 106 26 106H74L104 78V24C104 18.4772 99.5228 14 94 14H26Z" fill="url(#doc-gradient)"/>
+    
+    <!-- Page fold highlight -->
+    <path d="M74 14V78H104L74 14Z" fill="white" fill-opacity="0.25"/>
 </g>
 
 <!-- Text "lolopdf" -->
-<g filter="url(#text-shadow)" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -2px; text-anchor: middle;">
-    <text x="64" y="78">
-        <tspan fill="#FFFFFF" fill-opacity="0.8">lolo</tspan>
-        <tspan fill="#FFFFFF">pdf</tspan>
+<g style="font-family: 'Poppins', 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-weight: 800; font-size: 40px; letter-spacing: -2.5px; text-anchor: middle;">
+    <text x="64" y="80" filter="url(#text-shadow-glow)">
+        <tspan fill="#F8676F">lolo</tspan><tspan fill="#FFFFFF">pdf</tspan>
     </text>
 </g>
 </svg>
