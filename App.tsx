@@ -24,6 +24,8 @@ import { AddPageNumbersPage } from './pages/AddPageNumbersPage';
 import { PdfToWordPage } from './pages/PdfToWordPage';
 import { PdfToExcelPage } from './pages/PdfToExcelPage';
 import { PdfToPowerpointPage } from './pages/PdfToPowerpointPage';
+import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
 
 export type Page =
   | 'home'
@@ -100,8 +102,8 @@ const App: React.FC = () => {
       case 'all-tools': return <HomePage onNavigate={navigate} />;
       case 'pricing': return <PlaceholderPage title="Pricing Plans" />;
       case 'contact': return <PlaceholderPage title="Contact Us" />;
-      case 'login': return <PlaceholderPage title="Login" />;
-      case 'signup': return <PlaceholderPage title="Sign Up" />;
+      case 'login': return <LoginPage onNavigate={navigate} />;
+      case 'signup': return <SignupPage onNavigate={navigate} />;
       case 'about': return <PlaceholderPage title="About Us" />;
       case 'terms': return <TermsOfServicePage onNavigate={navigate} />;
       case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;

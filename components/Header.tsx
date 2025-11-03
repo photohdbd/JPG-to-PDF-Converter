@@ -1,17 +1,30 @@
 import React from 'react';
 import { Page } from '../App';
-import { FileTextIcon } from './Icons';
+import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../firebase';
+import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 interface HeaderProps {
     onNavigate: (page: Page) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
+  const { currentUser } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      onNavigate('home');
+    } catch (error) {
+      console.error("Failed to log out", error);
+    }
+  };
+
   return (
     <header className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-20 shadow-lg">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('home')}>
-          <FileTextIcon className="w-10 h-10 text-brand-primary"/>
+          <img src="/favicon.svg" alt="LOLOPDF Logo" className="w-10 h-10" />
           <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary text-transparent bg-clip-text">
             LOLOPDF
           </h1>
@@ -22,9 +35,18 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             <button onClick={() => onNavigate('pricing')} className="hover:text-white transition-colors">Pricing</button>
             <button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors">Contact</button>
         </nav>
-        <div className="hidden md:flex items-center gap-2">
-            <button onClick={() => onNavigate('login')} className="px-4 py-2 text-sm font-semibold rounded-md hover:bg-gray-800 transition-colors">Login</button>
-            <button onClick={() => onNavigate('signup')} className="px-4 py-2 text-sm font-semibold text-white bg-brand-primary rounded-md hover:bg-brand-secondary transition-colors">Sign Up</button>
+        <div className="hidden md:flex items-center gap-3">
+            {currentUser ? (
+              <>
+                <span className="text-sm text-gray-400 hidden lg:block" title={currentUser.email || ''}>{currentUser.email}</span>
+                <button onClick={handleLogout} className="px-4 py-2 text-sm font-semibold rounded-md hover:bg-gray-800 transition-colors">Logout</button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => onNavigate('login')} className="px-4 py-2 text-sm font-semibold rounded-md hover:bg-gray-800 transition-colors">Login</button>
+                <button onClick={() => onNavigate('signup')} className="px-4 py-2 text-sm font-semibold text-white bg-brand-primary rounded-md hover:bg-brand-secondary transition-colors">Sign Up</button>
+              </>
+            )}
         </div>
         <div className="md:hidden">
             {/* Mobile menu button can be added here */}
