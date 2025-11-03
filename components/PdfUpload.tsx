@@ -3,9 +3,10 @@ import { UploadCloudIcon } from './Icons';
 
 interface PdfUploadProps {
   onFilesSelect: (files: FileList) => void;
+  multiple?: boolean;
 }
 
-export const PdfUpload: React.FC<PdfUploadProps> = ({ onFilesSelect }) => {
+export const PdfUpload: React.FC<PdfUploadProps> = ({ onFilesSelect, multiple = true }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,19 +61,19 @@ export const PdfUpload: React.FC<PdfUploadProps> = ({ onFilesSelect }) => {
         className={`relative flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 ${dragDropClasses} hover:border-brand-secondary`}
       >
         <UploadCloudIcon className="w-16 h-16 mb-4 text-gray-500" />
-        <h2 className="text-xl sm:text-2xl font-bold text-white">Drag & Drop Your PDFs Here</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-white">Drag & Drop Your PDF Here</h2>
         <p className="text-gray-400 mt-2">or</p>
         <button
           type="button"
           className="mt-4 px-6 py-3 bg-brand-primary text-white font-semibold rounded-lg shadow-md hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-brand-primary transition-colors"
         >
-          Select PDF Files
+          Select PDF File
         </button>
         <input
           ref={fileInputRef}
           type="file"
           accept="application/pdf"
-          multiple
+          multiple={multiple}
           className="hidden"
           onChange={handleFileChange}
         />

@@ -6,6 +6,15 @@ import { ConverterPage } from './pages/ConverterPage';
 import { JpgToPdfPage } from './pages/JpgToPdfPage';
 import { MergePdfPage } from './pages/MergePdfPage';
 import { WordToPdfPage } from './pages/WordToPdfPage';
+import { SplitPdfPage } from './pages/SplitPdfPage';
+import { CompressPdfPage } from './pages/CompressPdfPage';
+import { PowerpointToPdfPage } from './pages/PowerpointToPdfPage';
+import { ExcelToPdfPage } from './pages/ExcelToPdfPage';
+import { SignPdfPage } from './pages/SignPdfPage';
+import { WatermarkPdfPage } from './pages/WatermarkPdfPage';
+import { RotatePdfPage } from './pages/RotatePdfPage';
+import { ProtectPdfPage } from './pages/ProtectPdfPage';
+import { UnlockPdfPage } from './pages/UnlockPdfPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 
 export type Page =
@@ -51,23 +60,21 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (currentPage) {
-      case 'converter': return <ConverterPage />;
-      case 'jpg-to-pdf': return <JpgToPdfPage />;
-      case 'merge': return <MergePdfPage />;
+      case 'converter': return <ConverterPage onNavigate={navigate} />;
+      case 'jpg-to-pdf': return <JpgToPdfPage onNavigate={navigate} />;
+      case 'merge': return <MergePdfPage onNavigate={navigate} />;
+      case 'split': return <SplitPdfPage onNavigate={navigate} />;
+      case 'compress': return <CompressPdfPage onNavigate={navigate} />;
       
       // Active tools
-      case 'word': return <WordToPdfPage />;
-
-      // Coming soon tools
-      case 'split': return <PlaceholderPage title="Split PDF" comingSoon />;
-      case 'compress': return <PlaceholderPage title="Compress PDF" comingSoon />;
-      case 'powerpoint': return <PlaceholderPage title="PowerPoint to PDF" comingSoon />;
-      case 'excel': return <PlaceholderPage title="Excel to PDF" comingSoon />;
-      case 'sign': return <PlaceholderPage title="Sign PDF" comingSoon />;
-      case 'watermark': return <PlaceholderPage title="Add Watermark" comingSoon />;
-      case 'rotate': return <PlaceholderPage title="Rotate PDF" comingSoon />;
-      case 'protect': return <PlaceholderPage title="Protect PDF" comingSoon />;
-      case 'unlock': return <PlaceholderPage title="Unlock PDF" comingSoon />;
+      case 'word': return <WordToPdfPage onNavigate={navigate} />;
+      case 'powerpoint': return <PowerpointToPdfPage onNavigate={navigate} />;
+      case 'excel': return <ExcelToPdfPage onNavigate={navigate} />;
+      case 'sign': return <SignPdfPage onNavigate={navigate} />;
+      case 'watermark': return <WatermarkPdfPage onNavigate={navigate} />;
+      case 'rotate': return <RotatePdfPage onNavigate={navigate} />;
+      case 'protect': return <ProtectPdfPage onNavigate={navigate} />;
+      case 'unlock': return <UnlockPdfPage onNavigate={navigate} />;
       
       // Static/info pages
       case 'all-tools': return <HomePage onNavigate={navigate} />;

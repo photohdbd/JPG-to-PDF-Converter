@@ -3,6 +3,8 @@ import { PdfUpload } from '../components/PdfUpload';
 import { PdfPreviewGrid } from '../components/PdfPreviewGrid';
 import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
+import { BackButton } from '../components/BackButton';
+import { Page } from '../App';
 
 declare const PDFLib: any;
 
@@ -12,7 +14,11 @@ export type PdfFile = {
   arrayBuffer: ArrayBuffer;
 };
 
-export const MergePdfPage: React.FC = () => {
+interface MergePdfPageProps {
+  onNavigate: (page: Page) => void;
+}
+
+export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
   const [pdfFiles, setPdfFiles] = useState<PdfFile[]>([]);
   const [isMerging, setIsMerging] = useState(false);
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null);
@@ -131,35 +137,38 @@ export const MergePdfPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-center">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Merge PDF Files</h1>
-        <p className="text-md md:text-lg text-gray-400 mb-8 max-w-xl text-center">
-            Combine multiple PDFs into a single document. Drag and drop to reorder files before merging.
-        </p>
-        {error && (
-          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
-            <AlertTriangleIcon className="w-5 h-5 mr-3" />
-            <span className="block sm:inline">{error}</span>
-            <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
-              <span className="text-xl">×</span>
-            </button>
-          </div>
-        )}
-        {isMerging && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-            <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
-            <p className="text-xl text-white mt-4">Merging PDFs...</p>
-          </div>
-        )}
-        {renderContent()}
-        <input
-            type="file"
-            ref={fileInputRef}
-            onChange={(e) => handleFilesChange(e.target.files)}
-            accept="application/pdf"
-            multiple
-            className="hidden"
-        />
+    <div className="w-full max-w-4xl flex flex-col">
+        <BackButton onClick={() => onNavigate('home')} />
+        <div className="w-full flex flex-col items-center justify-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Merge PDF Files</h1>
+            <p className="text-md md:text-lg text-gray-400 mb-8 max-w-xl text-center">
+                Combine multiple PDFs into a single document. Drag and drop to reorder files before merging.
+            </p>
+            {error && (
+            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
+                <AlertTriangleIcon className="w-5 h-5 mr-3" />
+                <span className="block sm:inline">{error}</span>
+                <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <span className="text-xl">×</span>
+                </button>
+            </div>
+            )}
+            {isMerging && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
+                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <p className="text-xl text-white mt-4">Merging PDFs...</p>
+            </div>
+            )}
+            {renderContent()}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={(e) => handleFilesChange(e.target.files)}
+                accept="application/pdf"
+                multiple
+                className="hidden"
+            />
+        </div>
     </div>
   );
 };

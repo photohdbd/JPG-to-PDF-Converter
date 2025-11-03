@@ -3,6 +3,8 @@ import { FileUpload } from '../components/FileUpload';
 import { ImagePreviewGrid } from '../components/ImagePreviewGrid';
 import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
+import { BackButton } from '../components/BackButton';
+import { Page } from '../App';
 
 declare const jspdf: any;
 
@@ -13,6 +15,10 @@ export type AppFile = {
   previewUrl?: string; // For images
   textContent?: string; // For text files
 };
+
+interface ConverterPageProps {
+  onNavigate: (page: Page) => void;
+}
 
 const TEXT_MIME_TYPES = [
     'text/plain', 'text/markdown', 'text/csv', 'text/html', 'text/css',
@@ -40,7 +46,7 @@ const getFileType = (file: File): 'image' | 'text' | 'unsupported' => {
 };
 
 
-export const ConverterPage: React.FC = () => {
+export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
   const [appFiles, setAppFiles] = useState<AppFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -210,31 +216,34 @@ export const ConverterPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-center">
-        {error && (
-          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
-            <AlertTriangleIcon className="w-5 h-5 mr-3" />
-            <span className="block sm:inline">{error}</span>
-            <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
-              <span className="text-xl">×</span>
-            </button>
-          </div>
-        )}
-        {isConverting && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-            <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
-            <p className="text-xl text-white mt-4">Converting to PDF...</p>
-          </div>
-        )}
-        {renderContent()}
-        <input
-            type="file"
-            ref={fileInputRef}
-            onChange={(e) => handleFilesChange(e.target.files)}
-            accept="image/*,.txt,.md,.csv,.json,.xml,.html,.css,.js,.log,.rtf,.c,.cpp,.java,.py,.php,.rb,.sh,.tex"
-            multiple
-            className="hidden"
-        />
+    <div className="w-full max-w-4xl flex flex-col">
+        <BackButton onClick={() => onNavigate('home')} />
+        <div className="w-full flex flex-col items-center justify-center">
+            {error && (
+            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
+                <AlertTriangleIcon className="w-5 h-5 mr-3" />
+                <span className="block sm:inline">{error}</span>
+                <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <span className="text-xl">×</span>
+                </button>
+            </div>
+            )}
+            {isConverting && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
+                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <p className="text-xl text-white mt-4">Converting to PDF...</p>
+            </div>
+            )}
+            {renderContent()}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={(e) => handleFilesChange(e.target.files)}
+                accept="image/*,.txt,.md,.csv,.json,.xml,.html,.css,.js,.log,.rtf,.c,.cpp,.java,.py,.php,.rb,.sh,.tex"
+                multiple
+                className="hidden"
+            />
+        </div>
     </div>
   );
 };

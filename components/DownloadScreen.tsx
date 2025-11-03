@@ -6,6 +6,7 @@ interface DownloadScreenProps {
   onStartOver: () => void;
   fileName?: string;
   autoDownload?: boolean;
+  details?: React.ReactNode;
 }
 
 export const DownloadScreen: React.FC<DownloadScreenProps> = ({
@@ -13,6 +14,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
   onStartOver,
   fileName = "converted.pdf",
   autoDownload = false,
+  details,
 }) => {
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
@@ -25,9 +27,15 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
   return (
     <div className="w-full max-w-md text-center bg-gray-800 border border-gray-700 p-8 rounded-xl shadow-2xl">
       <CheckCircleIcon className="w-16 h-16 text-green-400 mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-white mb-2">Conversion Successful!</h2>
-      <p className="text-gray-400 mb-8">{autoDownload ? "Your PDF is downloading automatically." : "Your PDF is ready to download."}</p>
+      <h2 className="text-2xl font-bold text-white mb-2">Success!</h2>
+      <p className="text-gray-400 mb-6">{autoDownload ? "Your file is downloading automatically." : "Your file is ready to download."}</p>
       
+      {details && (
+        <div className="my-6 text-left text-sm p-4 bg-gray-700/50 rounded-lg border border-gray-600 text-gray-300">
+          {details}
+        </div>
+      )}
+
       <a
         ref={downloadLinkRef}
         href={pdfUrl}
@@ -43,7 +51,7 @@ export const DownloadScreen: React.FC<DownloadScreenProps> = ({
         className="w-full mt-4 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors"
       >
         <RefreshCwIcon className="w-5 h-5" />
-        Convert More Files
+        Start Over
       </button>
     </div>
   );

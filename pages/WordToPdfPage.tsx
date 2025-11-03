@@ -3,6 +3,8 @@ import { FileUpload } from '../components/FileUpload';
 import { DocxPreviewGrid } from '../components/DocxPreviewGrid';
 import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
+import { BackButton } from '../components/BackButton';
+import { Page } from '../App';
 
 declare const jspdf: any;
 declare const mammoth: any;
@@ -14,7 +16,11 @@ export type DocxFile = {
   status: 'supported' | 'unsupported';
 };
 
-export const WordToPdfPage: React.FC = () => {
+interface WordToPdfPageProps {
+  onNavigate: (page: Page) => void;
+}
+
+export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
   const [docxFiles, setDocxFiles] = useState<DocxFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -73,7 +79,7 @@ export const WordToPdfPage: React.FC = () => {
       errorMessage += `${rejectedCount} file(s) were not valid Word documents and were ignored. `;
     }
     if (unsupportedDocCount > 0) {
-        errorMessage += `${unsupportedDocCount} .doc file(s) are not supported for conversion; please re-save them as .docx.`;
+        errorMessage += `${unsupportedDocCount} .doc file(s) are not supported for conversion; please re-save them as .docx from your word processor.`;
     }
     if(errorMessage) setError(errorMessage.trim());
     
@@ -94,38 +100,56 @@ export const WordToPdfPage: React.FC = () => {
 
     try {
       const { jsPDF } = jspdf;
-      const doc = new jsPDF();
+      const pdf = new jsPDF('p', 'pt', 'a4');
       
-      for (let i = 0; i < filesToConvert.length; i++) {
-        const docxFile = filesToConvert[i];
-        if (i > 0) {
-          doc.addPage();
+      let combinedHtml = '';
+
+      for (const [index, docxFile] of filesToConvert.entries()) {
+        const result = await mammoth.convertToHtml({ arrayBuffer: docxFile.arrayBuffer });
+        // Add a wrapper div to contain the content of one document
+        combinedHtml += `<div class="document-container"><h1>Document: ${docxFile.file.name}</h1>${result.value}</div>`;
+        // Add a page break for the next document
+        if (index < filesToConvert.length - 1) {
+            combinedHtml += '<div class="page-break"></div>';
         }
-
-        const result = await mammoth.extractRawText({ arrayBuffer: docxFile.arrayBuffer });
-        const text = result.value;
-        
-        const margin = 15;
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const maxLineWidth = pageWidth - margin * 2;
-
-        // Add file name as a title
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.text(docxFile.file.name, margin, margin);
-
-        // Add content
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
-        const lines = doc.splitTextToSize(text, maxLineWidth);
-        doc.text(lines, margin, margin + 15);
       }
-      
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
-      
-      setPdfUrl(url);
-      setDocxFiles([]);
+
+      const styledHtml = `
+        <html>
+          <head>
+            <style>
+              body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
+              .page-break { page-break-before: always; }
+              .document-container { margin: 20px; }
+              h1, h2, h3, h4, h5, h6 { font-family: 'Arial', sans-serif; color: #000; margin-top: 1.2em; margin-bottom: 0.5em; line-height: 1.2; }
+              h1 { font-size: 20pt; font-weight: bold; }
+              h2 { font-size: 18pt; font-weight: bold; }
+              h3 { font-size: 16pt; font-weight: bold; }
+              p, ul, ol, table { margin-bottom: 1em; }
+              ul, ol { padding-left: 40px; }
+              table { border-collapse: collapse; width: 100%; }
+              th, td { border: 1px solid #000; padding: 5px; text-align: left; vertical-align: top; }
+              th { background-color: #f2f2f2; font-weight: bold; }
+              strong, b { font-weight: bold; }
+              em, i { font-style: italic; }
+            </style>
+          </head>
+          <body>${combinedHtml}</body>
+        </html>
+      `;
+
+      await pdf.html(styledHtml, {
+        callback: function (doc) {
+          const pdfBlob = doc.output('blob');
+          const url = URL.createObjectURL(pdfBlob);
+          setPdfUrl(url);
+          setDocxFiles([]);
+        },
+        margin: [60, 60, 60, 60],
+        autoPaging: 'text',
+        width: 475, // A4 width in points (595) - margins (120)
+        windowWidth: 1200, // Larger window to help with layout calculations
+      });
       
     } catch (err) {
       console.error(err);
@@ -171,41 +195,44 @@ export const WordToPdfPage: React.FC = () => {
             onFilesSelect={handleFilesChange}
             title="Drag & Drop Your Word Files Here"
             accept={acceptTypes}
-            description="Supports .docx and .doc (unsupported for conversion)"
+            description="Supports .docx for conversion. Older .doc files cannot be converted."
         />
     );
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-center">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Word to PDF Converter</h1>
-        <p className="text-md md:text-lg text-gray-400 mb-8 max-w-2xl text-center">
-            Convert Microsoft Word (.docx) documents to PDF. Older .doc files are not supported and will be ignored.
-        </p>
-        {error && (
-          <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
-            <AlertTriangleIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span className="block sm:inline">{error}</span>
-            <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
-              <span className="text-xl">×</span>
-            </button>
-          </div>
-        )}
-        {isConverting && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-            <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
-            <p className="text-xl text-white mt-4">Converting to PDF...</p>
-          </div>
-        )}
-        {renderContent()}
-        <input
-            type="file"
-            ref={fileInputRef}
-            onChange={(e) => handleFilesChange(e.target.files)}
-            accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            multiple
-            className="hidden"
-        />
+    <div className="w-full max-w-4xl flex flex-col">
+        <BackButton onClick={() => onNavigate('home')} />
+        <div className="w-full flex flex-col items-center justify-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">Word to PDF Converter</h1>
+            <p className="text-md md:text-lg text-gray-400 mb-8 max-w-2xl text-center">
+                Convert Microsoft Word (.docx) documents to high-quality PDF files that preserve formatting.
+            </p>
+            {error && (
+            <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
+                <AlertTriangleIcon className="w-5 h-5 mr-3 flex-shrink-0" />
+                <span className="block sm:inline">{error}</span>
+                <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <span className="text-xl">×</span>
+                </button>
+            </div>
+            )}
+            {isConverting && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
+                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
+                <p className="text-xl text-white mt-4">Converting to PDF...</p>
+            </div>
+            )}
+            {renderContent()}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={(e) => handleFilesChange(e.target.files)}
+                accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                multiple
+                className="hidden"
+            />
+        </div>
     </div>
   );
 };
