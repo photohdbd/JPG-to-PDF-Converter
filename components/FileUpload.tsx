@@ -3,9 +3,17 @@ import { UploadCloudIcon } from './Icons';
 
 interface FileUploadProps {
   onFilesSelect: (files: FileList) => void;
+  title?: string;
+  accept?: string;
+  description?: string;
 }
 
-export const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect }) => {
+export const FileUpload: React.FC<FileUploadProps> = ({ 
+  onFilesSelect, 
+  title = "Drag & Drop Your Files Here",
+  accept = "image/*,.txt,.md,.csv,.json,.xml,.html,.css,.js,.log,.rtf,.c,.cpp,.java,.py,.php,.rb,.sh,.tex",
+  description = "Supports Images, Text Documents (TXT, MD...), and more" 
+}) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,7 +68,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect }) => {
         className={`relative flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 ${dragDropClasses} hover:border-brand-secondary`}
       >
         <UploadCloudIcon className="w-16 h-16 mb-4 text-gray-500" />
-        <h2 className="text-xl sm:text-2xl font-bold text-white">Drag & Drop Your Files Here</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-white">{title}</h2>
         <p className="text-gray-400 mt-2">or</p>
         <button
           type="button"
@@ -71,12 +79,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect }) => {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,.txt,.md,.csv,.json,.xml,.html,.css,.js,.log,.rtf,.c,.cpp,.java,.py,.php,.rb,.sh,.tex"
+          accept={accept}
           multiple
           className="hidden"
           onChange={handleFileChange}
         />
-        <p className="text-xs text-gray-500 mt-4">Supports Images, Text Documents (TXT, MD...), and more</p>
+        <p className="text-xs text-gray-500 mt-4">{description}</p>
       </div>
     </div>
   );

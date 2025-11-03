@@ -110,7 +110,7 @@ export const MergePdfPage: React.FC = () => {
 
   const renderContent = () => {
     if (mergedPdfUrl) {
-      return <DownloadScreen pdfUrl={mergedPdfUrl} onStartOver={reset} />;
+      return <DownloadScreen pdfUrl={mergedPdfUrl} onStartOver={reset} fileName="merged.pdf" />;
     }
 
     if (pdfFiles.length > 0) {

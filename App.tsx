@@ -3,12 +3,15 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomePage } from './pages/HomePage';
 import { ConverterPage } from './pages/ConverterPage';
+import { JpgToPdfPage } from './pages/JpgToPdfPage';
 import { MergePdfPage } from './pages/MergePdfPage';
+import { WordToPdfPage } from './pages/WordToPdfPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 
 export type Page =
   | 'home'
   | 'converter'
+  | 'jpg-to-pdf'
   | 'merge'
   | 'split'
   | 'compress'
@@ -49,12 +52,15 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'converter': return <ConverterPage />;
+      case 'jpg-to-pdf': return <JpgToPdfPage />;
       case 'merge': return <MergePdfPage />;
       
+      // Active tools
+      case 'word': return <WordToPdfPage />;
+
       // Coming soon tools
       case 'split': return <PlaceholderPage title="Split PDF" comingSoon />;
       case 'compress': return <PlaceholderPage title="Compress PDF" comingSoon />;
-      case 'word': return <PlaceholderPage title="Word to PDF" comingSoon />;
       case 'powerpoint': return <PlaceholderPage title="PowerPoint to PDF" comingSoon />;
       case 'excel': return <PlaceholderPage title="Excel to PDF" comingSoon />;
       case 'sign': return <PlaceholderPage title="Sign PDF" comingSoon />;

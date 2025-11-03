@@ -14,6 +14,7 @@ import {
   LockIcon,
   UnlockIcon,
   WatermarkIcon,
+  FileTextIcon,
 } from '../components/Icons';
 
 interface HomePageProps {
@@ -30,8 +31,15 @@ const tools: {
 }[] = [
   {
     icon: <ImageIcon className="w-8 h-8" />,
-    title: 'Image/Text to PDF',
-    description: 'Convert images and text files to PDF.',
+    title: 'JPG to PDF',
+    description: 'Convert JPG images to a single PDF file.',
+    page: 'jpg-to-pdf',
+    color: 'from-red-500 to-orange-600',
+  },
+  {
+    icon: <FileTextIcon className="w-8 h-8" />,
+    title: 'Generic File to PDF',
+    description: 'Convert various images and text files to PDF.',
     page: 'converter',
     color: 'from-blue-500 to-indigo-600',
   },
