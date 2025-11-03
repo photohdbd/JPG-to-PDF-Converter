@@ -16,6 +16,9 @@ import { RotatePdfPage } from './pages/RotatePdfPage';
 import { ProtectPdfPage } from './pages/ProtectPdfPage';
 import { UnlockPdfPage } from './pages/UnlockPdfPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { TermsOfServicePage } from './pages/TermsOfServicePage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { CookiePolicyPage } from './pages/CookiePolicyPage';
 
 export type Page =
   | 'home'
@@ -83,9 +86,9 @@ const App: React.FC = () => {
       case 'login': return <PlaceholderPage title="Login" />;
       case 'signup': return <PlaceholderPage title="Sign Up" />;
       case 'about': return <PlaceholderPage title="About Us" />;
-      case 'terms': return <PlaceholderPage title="Terms of Service" />;
-      case 'privacy': return <PlaceholderPage title="Privacy Policy" />;
-      case 'cookies': return <PlaceholderPage title="Cookie Policy" />;
+      case 'terms': return <TermsOfServicePage onNavigate={navigate} />;
+      case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;
+      case 'cookies': return <CookiePolicyPage onNavigate={navigate} />;
       case 'help': return <PlaceholderPage title="Help Center" />;
       case 'api_docs': return <PlaceholderPage title="API Docs" />;
 

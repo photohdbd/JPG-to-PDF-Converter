@@ -1,5 +1,4 @@
 import React from 'react';
-import { GithubIcon } from './Icons';
 import { Page } from '../App';
 
 interface FooterProps {
@@ -45,12 +44,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </ul>
             </div>
         </div>
-        <div className="mt-8 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+        <div className="mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
             <p>&copy; {new Date().getFullYear()} AI PDF Toolkit. All rights reserved.</p>
-            <button onClick={() => onNavigate('github')} className="flex items-center gap-2 hover:text-gray-300 transition-colors">
-                <GithubIcon className="w-4 h-4" />
-                <span>View on GitHub</span>
-            </button>
         </div>
       </div>
     </footer>
