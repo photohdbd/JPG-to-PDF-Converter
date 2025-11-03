@@ -1,76 +1,65 @@
 import React, { useRef, useState } from 'react';
-// Fix: The AppFile type is exported from ConverterPage, not App.
-import { AppFile } from '../pages/ConverterPage';
-import { TrashIcon, PlusIcon, XIcon, ArrowRightIcon, FileIcon, AlertTriangleIcon } from './Icons';
+import { PdfFile } from '../pages/MergePdfPage';
+import { TrashIcon, PlusIcon, XIcon, ArrowRightIcon, FileTextIcon } from './Icons';
 
-interface ImagePreviewGridProps {
-  appFiles: AppFile[];
-  setAppFiles: React.Dispatch<React.SetStateAction<AppFile[]>>;
-  isConverting: boolean;
-  onConvertToPdf: () => void;
+interface PdfPreviewGridProps {
+  pdfFiles: PdfFile[];
+  setPdfFiles: React.Dispatch<React.SetStateAction<PdfFile[]>>;
+  isProcessing: boolean;
+  onProcess: () => void;
   onAddMore: () => void;
   onClearAll: () => void;
+  processButtonText: string;
 }
 
 const PreviewCard: React.FC<{
-    appFile: AppFile;
+    pdfFile: PdfFile;
     onRemove: (id: string) => void;
     onDragStart: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
     onDragEnter: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
     onDragEnd: (e: React.DragEvent<HTMLDivElement>) => void;
     index: number;
     isDraggedOver: boolean;
-}> = ({ appFile, onRemove, onDragStart, onDragEnter, onDragEnd, index, isDraggedOver }) => {
-    const isUnsupported = appFile.type === 'unsupported';
+}> = ({ pdfFile, onRemove, onDragStart, onDragEnter, onDragEnd, index, isDraggedOver }) => {
     
     return (
         <div
-            draggable={!isUnsupported}
-            onDragStart={(e) => !isUnsupported && onDragStart(e, index)}
-            onDragEnter={(e) => !isUnsupported && onDragEnter(e, index)}
+            draggable
+            onDragStart={(e) => onDragStart(e, index)}
+            onDragEnter={(e) => onDragEnter(e, index)}
             onDragEnd={onDragEnd}
             onDragOver={(e) => e.preventDefault()}
-            className={`relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 transition-all duration-300 ${isDraggedOver ? 'border-brand-primary scale-105' : 'border-transparent'} ${isUnsupported ? '!border-red-700' : ''}`}
+            className={`relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 transition-all duration-300 ${isDraggedOver ? 'border-brand-primary scale-105' : 'border-transparent'}`}
         >
-            {appFile.type === 'image' && appFile.previewUrl && (
-                <img src={appFile.previewUrl} alt={appFile.file.name} className="w-full h-32 object-cover" />
-            )}
-            {appFile.type === 'text' && (
-                <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-700 p-2">
-                    <FileIcon className="w-12 h-12 text-gray-400" />
-                    <span className="text-xs text-gray-500 mt-2 uppercase">{appFile.file.name.split('.').pop()}</span>
-                </div>
-            )}
-            {isUnsupported && (
-                 <div className="w-full h-32 flex flex-col items-center justify-center bg-red-900/50 p-2">
-                    <AlertTriangleIcon className="w-10 h-10 text-red-400" />
-                    <span className="text-xs text-red-400 mt-2">UNSUPPORTED</span>
-                </div>
-            )}
+            <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-700 p-2">
+                <FileTextIcon className="w-12 h-12 text-red-400" />
+                <span className="text-xs text-gray-500 mt-2 uppercase">PDF</span>
+            </div>
 
             <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button
-                    onClick={() => onRemove(appFile.id)}
+                    onClick={() => onRemove(pdfFile.id)}
                     className="p-2 bg-red-600 rounded-full text-white hover:bg-red-700 transition-colors"
                     aria-label="Remove file"
                 >
                     <TrashIcon className="w-5 h-5" />
                 </button>
             </div>
-            <div className="p-2 text-xs text-gray-300 truncate" title={appFile.file.name}>
-                {appFile.file.name}
+            <div className="p-2 text-xs text-gray-300 truncate" title={pdfFile.file.name}>
+                {pdfFile.file.name}
             </div>
         </div>
     );
 };
 
-export const ImagePreviewGrid: React.FC<ImagePreviewGridProps> = ({
-  appFiles,
-  setAppFiles,
-  isConverting,
-  onConvertToPdf,
+export const PdfPreviewGrid: React.FC<PdfPreviewGridProps> = ({
+  pdfFiles,
+  setPdfFiles,
+  isProcessing,
+  onProcess,
   onAddMore,
   onClearAll,
+  processButtonText,
 }) => {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
@@ -87,30 +76,28 @@ export const ImagePreviewGrid: React.FC<ImagePreviewGridProps> = ({
 
   const handleDragEnd = (_e: React.DragEvent<HTMLDivElement>) => {
     if (dragItem.current !== null && dragOverItem.current !== null) {
-      const newImageFiles = [...appFiles];
-      const draggedItemContent = newImageFiles.splice(dragItem.current, 1)[0];
-      newImageFiles.splice(dragOverItem.current, 0, draggedItemContent);
+      const newPdfFiles = [...pdfFiles];
+      const draggedItemContent = newPdfFiles.splice(dragItem.current, 1)[0];
+      newPdfFiles.splice(dragOverItem.current, 0, draggedItemContent);
       dragItem.current = null;
       dragOverItem.current = null;
-      setAppFiles(newImageFiles);
+      setPdfFiles(newPdfFiles);
     }
     setDraggedOverIndex(null);
   };
 
-  const removeImage = (id: string) => {
-    setAppFiles(files => files.filter(file => file.id !== id));
+  const removeFile = (id: string) => {
+    setPdfFiles(files => files.filter(file => file.id !== id));
   };
-
-  const supportedFilesCount = appFiles.filter(f => f.type !== 'unsupported').length;
   
   return (
     <div className="w-full max-w-4xl">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-        {appFiles.map((appFile, index) => (
+        {pdfFiles.map((pdfFile, index) => (
           <PreviewCard
-            key={appFile.id}
-            appFile={appFile}
-            onRemove={removeImage}
+            key={pdfFile.id}
+            pdfFile={pdfFile}
+            onRemove={removeFile}
             onDragStart={handleDragStart}
             onDragEnter={handleDragEnter}
             onDragEnd={handleDragEnd}
@@ -129,12 +116,12 @@ export const ImagePreviewGrid: React.FC<ImagePreviewGridProps> = ({
             </button>
         </div>
         <button
-          onClick={onConvertToPdf}
-          disabled={isConverting || supportedFilesCount === 0}
+          onClick={onProcess}
+          disabled={isProcessing || pdfFiles.length === 0}
           className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary transition-all duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105"
         >
-          {isConverting ? 'Converting...' : `Convert ${supportedFilesCount} File(s)`}
-          {!isConverting && supportedFilesCount > 0 && <ArrowRightIcon className="w-5 h-5"/>}
+          {isProcessing ? 'Processing...' : `${processButtonText} (${pdfFiles.length})`}
+          {!isProcessing && pdfFiles.length > 0 && <ArrowRightIcon className="w-5 h-5"/>}
         </button>
       </div>
     </div>

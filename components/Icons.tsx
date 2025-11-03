@@ -94,8 +94,88 @@ export const FileTextIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
+export const FileIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+    <polyline points="14 2 14 8 20 8" />
+  </svg>
+);
+
 export const GithubIcon: React.FC<IconProps> = (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
     </svg>
+);
+
+// New Icons for Tool Grid
+export const ImageIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>
+  </svg>
+);
+
+export const MergeIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m12 6-4 4 4 4"/><path d="m8 10h11"/><path d="m12 14 4 4-4 4"/><path d="m16 18H5"/>
+  </svg>
+);
+
+export const SplitIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2v5"/><path d="M12 17v5"/><path d="M15 4.586a2 2 0 0 1 2.828 0L21.414 8a2 2 0 0 1 0 2.828L17.828 14.4a2 2 0 0 1-2.828 0L12.172 11.57a2 2 0 0 1 0-2.828L15 4.586z"/><path d="M9 19.414a2 2 0 0 1-2.828 0L2.586 16a2 2 0 0 1 0-2.828L6.172 9.6a2 2 0 0 1 2.828 0L11.828 12.43a2 2 0 0 1 0 2.828L9 19.414z"/>
+  </svg>
+);
+
+export const CompressIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 10h-4v4h4v-4z"/><path d="M20 4h-2v2h2V4z"/><path d="M4 4h2v2H4V4z"/><path d="M10 4V2h4v2h-4z"/><path d="M4 10H2v4h2v-4z"/><path d="M20 10h2v4h-2v-4z"/><path d="M10 20v2h4v-2h-4z"/><path d="M4 20h2v-2H4v2z"/><path d="M20 20h-2v-2h2v2z"/>
+  </svg>
+);
+
+export const WordIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4v16h16V4H4z"/><path d="M12 6v10"/><path d="M10 6l-2 10"/><path d="M14 6l2 10"/>
+  </svg>
+);
+
+export const PowerpointIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4v16h16V4H4z"/><path d="M9 9h6v6H9z"/><path d="M18 12h2"/>
+  </svg>
+);
+
+export const ExcelIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4v16h16V4H4z"/><path d="M8 4v16"/><path d="M4 9h16"/><path d="M4 15h16"/>
+  </svg>
+);
+
+export const EditIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+
+export const WatermarkIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m12 6-2 5-2-5"/><path d="M12 6h-4"/><path d="m18 6 2 5 2-5"/><path d="M18 6h4"/><path d="m14 12.5 2 5 2-5"/><path d="M14 12.5h4"/><path d="M21 12.5c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8c1.17 0 2.292.165 3.344.469"/>
+  </svg>
+);
+
+export const RotateIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 7.2 4.24M3.51 15a9 9 0 0 0 12.8 5.25"/>
+  </svg>
+);
+
+export const LockIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+export const UnlockIcon: React.FC<IconProps> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+  </svg>
 );
