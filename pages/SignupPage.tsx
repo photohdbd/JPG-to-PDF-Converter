@@ -44,8 +44,14 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigate }) => {
     try {
         await signInWithPopup(auth, googleProvider);
         onNavigate('home');
-    } catch (error) {
-        setError("Failed to sign up with Google. Please try again.");
+    } catch (error: any) {
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+             setError("Sign-up popup was closed. Please try again.");
+        } else if (error.code === 'auth/popup-blocked') {
+            setError("Popup blocked by browser. Please allow popups for this site.");
+        } else {
+            setError("Failed to sign up with Google. Please try again.");
+        }
     }
     setGoogleLoading(false);
   }

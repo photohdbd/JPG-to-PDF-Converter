@@ -210,7 +210,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         <span className="text-gray-900 dark:text-white">PDF</span>
       </h1>
       <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400 mb-12 max-w-3xl mx-auto">
-        Your one-stop solution for converting, merging, editing, and enhancing PDF files.
+        One platform, every PDF solution. Use all tools at zero cost. Merge, split, compress, convert, rotate, lock, unlock, and watermark in just moments.
       </p>
 
       <div className="flex flex-wrap justify-center gap-3 mb-10">

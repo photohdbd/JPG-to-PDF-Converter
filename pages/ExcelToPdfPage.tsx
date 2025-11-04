@@ -76,8 +76,8 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
               .page-break { page-break-before: always; }
               .sheet-container { }
               h2 { font-size: 14pt; font-weight: bold; margin-bottom: 10px; }
-              table { border-collapse: collapse; width: 100%; font-size: 8pt; }
-              th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
+              table { border-collapse: collapse; width: 100%; font-size: 8pt; table-layout: fixed; word-wrap: break-word; }
+              th, td { border: 1px solid #ccc; padding: 4px; text-align: left; overflow-wrap: break-word; }
               th { background-color: #f2f2f2; font-weight: bold; }
             </style>
           </head>
@@ -92,7 +92,7 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
                 setPdfUrl(url);
             },
             margin: [40, 30, 40, 30],
-            autoPaging: 'text',
+            autoPaging: 'slice',
             width: 780, // A4 landscape width (842) - margins
             windowWidth: 1500,
         });
