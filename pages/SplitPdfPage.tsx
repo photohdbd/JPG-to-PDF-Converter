@@ -5,9 +5,9 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
 
 declare const pdfjsLib: any;
+declare const jspdf: any;
 
 type PdfFileState = {
   file: File;
@@ -67,6 +67,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
     }
 
     setIsProcessing(true);
+    setProgressMessage("Rendering PDF pages...");
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -79,6 +80,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
         reset();
       } finally {
         setIsProcessing(false);
+        setProgressMessage("");
       }
     };
     reader.onerror = () => {
@@ -130,24 +132,6 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
      setPages(prevPages => prevPages.map(page => ({ ...page, selected: false })));
   };
 
-  const toRangeString = (numbers: number[]): string => {
-      if (numbers.length === 0) return '';
-      numbers.sort((a,b) => a - b);
-      const ranges = [];
-      let start = numbers[0];
-      let end = numbers[0];
-      for (let i = 1; i < numbers.length; i++) {
-          if (numbers[i] === end + 1) {
-              end = numbers[i];
-          } else {
-              ranges.push(start === end ? `${start}` : `${start}-${end}`);
-              start = end = numbers[i];
-          }
-      }
-      ranges.push(start === end ? `${start}` : `${start}-${end}`);
-      return ranges.join(',');
-  }
-
   const handleSplitPdf = async () => {
     if (!pdfFile) return;
 
@@ -169,15 +153,54 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
     setProgressMessage('Initializing...');
 
     try {
-      const formData = new FormData();
-      formData.append('file', pdfFile.file);
-      formData.append('range', toRangeString(pagesToKeep));
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', hotfixes: ['px_scaling'] });
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = doc.internal.pageSize.getHeight();
       
-      const { blob, filename } = await callStirlingApi('/api/v1/general/split/range', formData, setProgressMessage);
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(pdfFile.arrayBuffer) }).promise;
+      let isFirstPage = true;
 
+      for (const [index, pageNum] of pagesToKeep.entries()) {
+        setProgressMessage(`Adding page ${index + 1} of ${pagesToKeep.length}...`);
+        
+        if (!isFirstPage) {
+          doc.addPage();
+        }
+
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        const context = canvas.getContext('2d');
+
+        if (!context) throw new Error('Could not get canvas context');
+
+        await page.render({ canvasContext: context, viewport }).promise;
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+
+        const aspectRatio = canvas.width / canvas.height;
+        let imgWidth = pdfWidth;
+        let imgHeight = pdfWidth / aspectRatio;
+        if (imgHeight > pdfHeight) {
+            imgHeight = pdfHeight;
+            imgWidth = pdfHeight * aspectRatio;
+        }
+        const x = (pdfWidth - imgWidth) / 2;
+        const y = (pdfHeight - imgHeight) / 2;
+        
+        doc.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+        isFirstPage = false;
+      }
+      
+      setProgressMessage('Finalizing PDF...');
+      const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
+      const originalName = pdfFile.file.name.replace(/\.pdf$/i, '');
+
       setSplitPdfUrl(url);
-      setDownloadName(filename);
+      setDownloadName(`${originalName}_split.pdf`);
 
     } catch (err) {
       console.error(err);

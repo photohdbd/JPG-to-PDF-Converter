@@ -4,14 +4,16 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon, PlusIcon, RefreshCwIcon, TrashIcon, ArrowRightIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
 
 declare const pdfjsLib: any;
+declare const jspdf: any;
 
 type PageRepresentation = {
   id: string;
-  previewUrl: string; // data URL from canvas rendering
+  previewUrl: string; // data URL
   sourceFile: File;
+  sourcePageNum?: number; // Page number if source is a PDF
+  isImage: boolean;
 };
 
 interface AddPagesToPdfPageProps {
@@ -73,7 +75,9 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
             newPages.push({
                 id: `page_${Date.now()}_${i}`,
                 previewUrl: canvas.toDataURL(),
-                sourceFile: file
+                sourceFile: file,
+                sourcePageNum: i,
+                isImage: false,
             });
         }
       }
@@ -92,7 +96,8 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
             newPages.push({
                 id: `page_${Date.now()}_${file.name}`,
                 previewUrl,
-                sourceFile: file
+                sourceFile: file,
+                isImage: true,
             });
         } else if (file.type === 'application/pdf') {
             try {
@@ -112,16 +117,72 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
     setIsProcessing(true);
     setProcessingMessage('Assembling new PDF...');
     try {
-        const formData = new FormData();
-        pages.forEach(page => {
-            formData.append('file', page.sourceFile);
-        });
-        
-        const { blob, filename } = await callStirlingApi('/api/v1/general/convert-to-pdf', formData, setProcessingMessage);
-        
+        const { jsPDF } = jspdf;
+        const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', hotfixes: ['px_scaling'] });
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = doc.internal.pageSize.getHeight();
+        let isFirstPage = true;
+
+        const pdfCache = new Map<File, any>();
+
+        for (const [index, pageRep] of pages.entries()) {
+            setProcessingMessage(`Processing page ${index + 1} of ${pages.length}...`);
+            if(!isFirstPage) doc.addPage();
+
+            if (pageRep.isImage) {
+                await new Promise<void>((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                         const aspectRatio = img.width / img.height;
+                        let imgWidth = pdfWidth;
+                        let imgHeight = pdfWidth / aspectRatio;
+                        if (imgHeight > pdfHeight) {
+                            imgHeight = pdfHeight;
+                            imgWidth = pdfHeight * aspectRatio;
+                        }
+                        const x = (pdfWidth - imgWidth) / 2;
+                        const y = (pdfHeight - imgHeight) / 2;
+                        doc.addImage(img, 'auto', x, y, imgWidth, imgHeight);
+                        resolve();
+                    }
+                    img.onerror = reject;
+                    img.src = pageRep.previewUrl;
+                });
+            } else { // It's a PDF page
+                if (!pdfCache.has(pageRep.sourceFile)) {
+                    const arrayBuffer = await pageRep.sourceFile.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+                    pdfCache.set(pageRep.sourceFile, pdf);
+                }
+                const pdf = pdfCache.get(pageRep.sourceFile);
+                const page = await pdf.getPage(pageRep.sourcePageNum!);
+                const viewport = page.getViewport({ scale: 2.0 });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const context = canvas.getContext('2d');
+                if (!context) throw new Error("Canvas context not found");
+                await page.render({canvasContext: context, viewport}).promise;
+                const imgData = canvas.toDataURL('image/jpeg');
+
+                const aspectRatio = canvas.width / canvas.height;
+                let imgWidth = pdfWidth;
+                let imgHeight = pdfWidth / aspectRatio;
+                if (imgHeight > pdfHeight) {
+                    imgHeight = pdfHeight;
+                    imgWidth = pdfHeight * aspectRatio;
+                }
+                const x = (pdfWidth - imgWidth) / 2;
+                const y = (pdfHeight - imgHeight) / 2;
+                doc.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+            }
+            isFirstPage = false;
+        }
+
+        const blob = doc.output('blob');
         const url = URL.createObjectURL(blob);
         setResultUrl(url);
-        setDownloadName(filename);
+        setDownloadName('lolopdf_combined.pdf');
     } catch(e) {
         console.error(e);
         setError(e instanceof Error ? e.message : "An error occurred while creating the PDF.");

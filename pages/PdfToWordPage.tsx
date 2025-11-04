@@ -4,7 +4,8 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
+
+declare const pdfjsLib: any;
 
 interface PdfToWordPageProps {
   onNavigate: (page: Page) => void;
@@ -18,6 +19,9 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
   const [progressMessage, setProgressMessage] = useState('');
 
   useEffect(() => {
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+      }
       return () => {
           if (resultUrl) URL.revokeObjectURL(resultUrl);
       }
@@ -37,13 +41,22 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
     setProgressMessage('Extracting text...');
     
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+      let fullText = '';
       
-      const { blob, filename } = await callStirlingApi('/api/v1/convert/pdf-to-word', formData, setProgressMessage);
+      for (let i = 1; i <= pdf.numPages; i++) {
+        setProgressMessage(`Processing page ${i} of ${pdf.numPages}...`);
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n\n';
+      }
 
-      setResultUrl(URL.createObjectURL(blob));
-      setFileName(filename);
+      const blob = new Blob([fullText], { type: 'application/msword;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
+      setFileName(file.name.replace(/\.pdf$/i, '.doc'));
 
     } catch (err) {
       console.error(err);

@@ -4,7 +4,9 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
+
+declare const pdfjsLib: any;
+declare const jspdf: any;
 
 type Position = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
 
@@ -26,6 +28,12 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
   const [format, setFormat] = useState('{p}/{n}');
   const [margin, setMargin] = useState(36);
 
+  useState(() => {
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+    }
+  });
+
   const handleFileChange = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     reset();
@@ -41,18 +49,65 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
     setError(null);
     setProgressMessage("Adding page numbers...");
     try {
-      const formData = new FormData();
-      formData.append('file', pdfFile.file);
-      formData.append('position', position);
-      formData.append('font_size', String(fontSize));
-      formData.append('format', format);
-      formData.append('margin', String(margin));
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({ orientation: 'p', unit: 'px', hotfixes: ['px_scaling'] });
       
-      const { blob, filename } = await callStirlingApi('/api/v1/general/add-page-numbers', formData, setProgressMessage);
-      
+      const arrayBuffer = await pdfFile.file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+      const numPages = pdf.numPages;
+
+      for (let i = 1; i <= numPages; i++) {
+        setProgressMessage(`Processing page ${i} of ${numPages}...`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Could not get canvas context');
+
+        await page.render({ canvasContext: context, viewport }).promise;
+        
+        // Add text
+        context.font = `${fontSize * 2}px Arial`;
+        context.fillStyle = '#000000';
+        
+        const text = format.replace('{p}', String(i)).replace('{n}', String(numPages));
+        const textMetrics = context.measureText(text);
+
+        let x, y;
+        const [vAlign, hAlign] = position.split('-');
+
+        if (vAlign === 'top') y = margin;
+        else y = canvas.height - margin;
+
+        if (hAlign === 'left') {
+          context.textAlign = 'left';
+          x = margin;
+        } else if (hAlign === 'center') {
+          context.textAlign = 'center';
+          x = canvas.width / 2;
+        } else { // right
+          context.textAlign = 'right';
+          x = canvas.width - margin;
+        }
+        
+        context.fillText(text, x, y);
+
+        // Add to PDF
+        if (i > 1) doc.addPage([canvas.width, canvas.height]);
+        else {
+            const page1 = doc.internal.pages[1];
+            page1.width = canvas.width;
+            page1.height = canvas.height;
+        }
+        doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, canvas.width, canvas.height);
+      }
+
+      const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
-      setDownloadName(filename);
+      setDownloadName(pdfFile.file.name.replace(/\.pdf$/i, '_numbered.pdf'));
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed to add page numbers. The PDF might be corrupted or protected.");

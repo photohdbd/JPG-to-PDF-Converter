@@ -4,9 +4,9 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon, RefreshCwIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
 
 declare const pdfjsLib: any;
+declare const jspdf: any;
 
 interface PagePreview {
   dataUrl: string;
@@ -76,15 +76,44 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
     setIsProcessing(true);
     setProgressMessage("Applying rotation...");
     try {
-      const formData = new FormData();
-      formData.append('file', pdfFile.file);
-      formData.append('rotation', String(rotation));
-
-      const { blob, filename } = await callStirlingApi('/api/v1/general/rotate', formData, setProgressMessage);
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({ orientation: 'p', unit: 'px', hotfixes: ['px_scaling'] });
       
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(pdfFile.arrayBuffer) }).promise;
+      
+      for(let i=1; i <= pdf.numPages; i++) {
+        setProgressMessage(`Processing page ${i} of ${pdf.numPages}`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error("Canvas context not available.");
+
+        await page.render({canvasContext: context, viewport }).promise;
+        const imgData = canvas.toDataURL('image/jpeg');
+        
+        const needsSwap = rotation === 90 || rotation === 270;
+        const pageWidth = needsSwap ? canvas.height : canvas.width;
+        const pageHeight = needsSwap ? canvas.width : canvas.height;
+
+        if (i > 1) {
+          doc.addPage([pageWidth, pageHeight]);
+        } else {
+          const page1 = doc.internal.pages[1];
+          page1.width = pageWidth;
+          page1.height = pageHeight;
+        }
+
+        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'NONE', rotation);
+      }
+
+      const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
-      setDownloadName(filename);
+      setDownloadName(pdfFile.file.name.replace(/\.pdf$/i, '_rotated.pdf'));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to rotate PDF.");
     } finally {
@@ -108,9 +137,9 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
      <div className="w-full">
         <div className="flex justify-center items-center gap-4 mb-6 p-4 bg-gray-200 dark:bg-gray-800 rounded-lg">
             <span className="font-semibold">Rotate all pages:</span>
-            <button onClick={() => setRotation(90)} className={`px-4 py-2 rounded font-semibold ${rotation === 90 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>90° Left ↺</button>
+            <button onClick={() => setRotation(270)} className={`px-4 py-2 rounded font-semibold ${rotation === 270 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>90° Left ↺</button>
             <button onClick={() => setRotation(180)} className={`px-4 py-2 rounded font-semibold ${rotation === 180 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>180°</button>
-            <button onClick={() => setRotation(270)} className={`px-4 py-2 rounded font-semibold ${rotation === 270 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>90° Right ↻</button>
+            <button onClick={() => setRotation(90)} className={`px-4 py-2 rounded font-semibold ${rotation === 90 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>90° Right ↻</button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
             {pages.map((page, index) => (

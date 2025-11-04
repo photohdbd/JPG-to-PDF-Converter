@@ -5,7 +5,9 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
+
+declare const pdfjsLib: any;
+declare const jspdf: any;
 
 export type PdfFile = {
   id: string;
@@ -26,6 +28,9 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+    }
     return () => {
       if (mergedPdfUrl) {
         URL.revokeObjectURL(mergedPdfUrl);
@@ -65,21 +70,63 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
     setProgressMessage('Initializing...');
 
     try {
-      const formData = new FormData();
-      pdfFiles.forEach(pdfFile => {
-        formData.append('file', pdfFile.file);
-      });
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', hotfixes: ['px_scaling'] });
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = doc.internal.pageSize.getHeight();
+      let isFirstPage = true;
 
-      const { blob, filename } = await callStirlingApi('/api/v1/general/merge', formData, setProgressMessage);
-      
+      for (const [fileIndex, pdfFile] of pdfFiles.entries()) {
+        const arrayBuffer = await pdfFile.file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+        
+        for (let i = 1; i <= pdf.numPages; i++) {
+          setProgressMessage(`Processing file ${fileIndex + 1}/${pdfFiles.length}, page ${i}/${pdf.numPages}`);
+          
+          if (!isFirstPage) {
+            doc.addPage();
+          }
+          
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 }); // High-resolution rendering
+          
+          const canvas = document.createElement('canvas');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          const context = canvas.getContext('2d');
+          
+          if (!context) {
+              throw new Error('Could not get canvas context');
+          }
+          
+          await page.render({ canvasContext: context, viewport }).promise;
+          const imgData = canvas.toDataURL('image/jpeg', 0.9);
+
+          const aspectRatio = canvas.width / canvas.height;
+          let imgWidth = pdfWidth;
+          let imgHeight = pdfWidth / aspectRatio;
+          if (imgHeight > pdfHeight) {
+              imgHeight = pdfHeight;
+              imgWidth = pdfHeight * aspectRatio;
+          }
+          const x = (pdfWidth - imgWidth) / 2;
+          const y = (pdfHeight - imgHeight) / 2;
+
+          doc.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+          isFirstPage = false;
+        }
+      }
+
+      setProgressMessage('Finalizing PDF...');
+      const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
       setMergedPdfUrl(url);
-      setDownloadName(filename);
+      setDownloadName('lolopdf_merged.pdf');
       setPdfFiles([]);
       
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred during merging.");
+      setError(err instanceof Error ? err.message : "An unknown error occurred during merging. One of the PDFs might be corrupted or password-protected.");
     } finally {
       setIsMerging(false);
       setProgressMessage('');

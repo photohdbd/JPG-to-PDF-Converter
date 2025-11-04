@@ -4,9 +4,9 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
 
 declare const pdfjsLib: any;
+declare const jspdf: any;
 
 interface WatermarkPdfPageProps {
   onNavigate: (page: Page) => void;
@@ -18,7 +18,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
   
   const [mode, setMode] = useState<'text' | 'image'>('text');
   const [text, setText] = useState('CONFIDENTIAL');
-  const [image, setImage] = useState<{ file: File; url: string } | null>(null);
+  const [image, setImage] = useState<{ file: File; url: string, element: HTMLImageElement } | null>(null);
   
   const [opacity, setOpacity] = useState(0.2);
   const [rotation, setRotation] = useState(-45);
@@ -70,7 +70,11 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
     } else { // image
       if (!file.type.startsWith('image/')) return setError("Please upload a valid image file (PNG, JPG).");
       const url = URL.createObjectURL(file);
-      setImage({ file, url });
+      const imgElement = new Image();
+      imgElement.onload = () => {
+        setImage({ file, url, element: imgElement });
+      }
+      imgElement.src = url;
     }
   };
 
@@ -84,24 +88,59 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
     setProgressMessage("Applying watermark...");
 
     try {
-      const formData = new FormData();
-      formData.append('file', pdfFile.file);
-      formData.append('watermark_type', mode);
-      formData.append('opacity', String(opacity));
-      formData.append('rotation', String(rotation));
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', hotfixes: ['px_scaling'] });
       
-      if (mode === 'text') {
-        formData.append('text', text);
-        formData.append('font_size', String(fontSize));
-      } else if (image) {
-        formData.append('image', image.file);
+      const arrayBuffer = await pdfFile.file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+
+      for(let i=1; i<=pdf.numPages; i++) {
+        setProgressMessage(`Processing page ${i} of ${pdf.numPages}...`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas context not available');
+        
+        // Draw PDF page
+        await page.render({ canvasContext: context, viewport }).promise;
+        
+        // Apply watermark
+        context.globalAlpha = opacity;
+        context.save();
+        context.translate(canvas.width / 2, canvas.height / 2);
+        context.rotate(rotation * Math.PI / 180);
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+
+        if (mode === 'text') {
+          context.font = `${fontSize}px Arial`;
+          context.fillStyle = '#000000';
+          context.fillText(text, 0, 0);
+        } else if (image) {
+          const imgWidth = canvas.width / 2;
+          const imgHeight = (image.element.height / image.element.width) * imgWidth;
+          context.drawImage(image.element, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+        }
+        context.restore();
+
+        // Add to new PDF
+        if (i > 1) doc.addPage([canvas.width, canvas.height]);
+        else {
+          const page1 = doc.internal.pages[1];
+          page1.width = canvas.width;
+          page1.height = canvas.height;
+        }
+        doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, canvas.width, canvas.height);
       }
 
-      const { blob, filename } = await callStirlingApi('/api/v1/general/add-watermark', formData, setProgressMessage);
-      
+      const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
-      setDownloadName(filename);
+      setDownloadName(pdfFile.file.name.replace(/\.pdf$/i, '_watermarked.pdf'));
+
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : "Failed to add watermark. The PDF might be corrupted or protected.");
