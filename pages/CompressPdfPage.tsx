@@ -89,7 +89,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
       formData.append('file', pdfFile.file);
       formData.append('compressionLevel', getApiLevel());
 
-      const { blob, filename } = await callStirlingApi('/compress', formData, setProcessingProgress);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/compress', formData, setProcessingProgress);
 
       const url = URL.createObjectURL(blob);
       setResult({

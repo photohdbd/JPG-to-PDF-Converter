@@ -117,7 +117,7 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
             formData.append('file', page.sourceFile);
         });
         
-        const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProcessingMessage);
+        const { blob, filename } = await callStirlingApi('/api/v1/general/convert-to-pdf', formData, setProcessingMessage);
         
         const url = URL.createObjectURL(blob);
         setResultUrl(url);

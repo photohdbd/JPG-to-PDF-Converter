@@ -48,7 +48,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
       formData.append('format', format);
       formData.append('margin', String(margin));
       
-      const { blob, filename } = await callStirlingApi('/add-page-numbers', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/add-page-numbers', formData, setProgressMessage);
       
       const url = URL.createObjectURL(blob);
       setResultUrl(url);

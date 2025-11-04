@@ -40,7 +40,7 @@ export const UnlockPdfPage: React.FC<UnlockPdfPageProps> = ({ onNavigate }) => {
       formData.append('file', pdfFile.file);
       formData.append('password', password);
 
-      const { blob, filename } = await callStirlingApi('/remove-password', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/remove-password', formData, setProgressMessage);
 
       const url = URL.createObjectURL(blob);
       setResultUrl(url);

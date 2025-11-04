@@ -4,7 +4,9 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
+
+declare const pdfjsLib: any;
+declare const JSZip: any;
 
 interface PdfToJpgPageProps {
   onNavigate: (page: Page) => void;
@@ -18,6 +20,9 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
   const [downloadName, setDownloadName] = useState('');
 
   useEffect(() => {
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+    }
     return () => {
       if(resultUrl) URL.revokeObjectURL(resultUrl);
     };
@@ -41,15 +46,43 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
     setIsProcessing(true);
     setProgress('Initializing...');
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      // Specify image format if API supports it, e.g., 'jpeg'
-      // formData.append('imageFormat', 'jpeg'); 
-      const { blob, filename } = await callStirlingApi('/pdf-to-images', formData, setProgress);
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+      const pdf = await loadingTask.promise;
+      const numPages = pdf.numPages;
       
-      const url = URL.createObjectURL(blob);
+      const zip = new JSZip();
+      const imageBlobs: { name: string, blob: Blob }[] = [];
+
+      for (let i = 1; i <= numPages; i++) {
+        setProgress(`Converting page ${i} of ${numPages}...`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        if (!context) {
+          throw new Error('Could not get canvas context');
+        }
+
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        
+        const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+        
+        if (blob) {
+            zip.file(`page_${i}.jpg`, blob);
+        }
+      }
+
+      setProgress('Zipping images...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const originalName = file.name.replace(/\.pdf$/i, '');
+
       setResultUrl(url);
-      setDownloadName(filename);
+      setDownloadName(`${originalName}_images.zip`);
       
     } catch (err) {
       console.error(err);
@@ -94,7 +127,7 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
             </div>
             )}
             {resultUrl ? (
-                <DownloadScreen files={[{ url: resultUrl, name: downloadName }]} onStartOver={reset} />
+                <DownloadScreen files={[{ url: resultUrl, name: downloadName }]} onStartOver={reset} autoDownload={true} />
             ) : <PdfUpload onFilesSelect={handleFileChange} multiple={false} />}
         </div>
     </div>

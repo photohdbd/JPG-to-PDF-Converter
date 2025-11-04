@@ -39,7 +39,7 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { blob, filename } = await callStirlingApi('/pdf-to-excel', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/convert/pdf-to-excel', formData, setProgressMessage);
       
       setResultUrl(URL.createObjectURL(blob));
       setFileName(filename);

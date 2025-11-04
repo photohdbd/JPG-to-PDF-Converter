@@ -80,7 +80,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
       formData.append('file', pdfFile.file);
       formData.append('rotation', String(rotation));
 
-      const { blob, filename } = await callStirlingApi('/rotate', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/rotate', formData, setProgressMessage);
       
       const url = URL.createObjectURL(blob);
       setResultUrl(url);

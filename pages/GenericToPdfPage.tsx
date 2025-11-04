@@ -5,14 +5,14 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
+
+declare const jspdf: any;
 
 export type AppFile = {
   id: string;
   file: File;
   type: 'image' | 'text' | 'unsupported';
   previewUrl?: string;
-  textContent?: string;
 };
 
 interface GenericToPdfPageProps {
@@ -42,6 +42,13 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
 
   const acceptedTypesArray = acceptedMimeTypes.split(',').map(t => t.trim().toLowerCase());
 
+  const isClientSideCompatible = React.useMemo(() => {
+    const supportedFragments = ['image/', '.txt', '.csv', '.rtf', '.md', 'text/plain'];
+    return acceptedTypesArray.some(type => 
+        supportedFragments.some(s => type.includes(s))
+    );
+  }, [acceptedMimeTypes]);
+
   useEffect(() => {
     return () => {
       appFiles.forEach(appFile => {
@@ -65,12 +72,8 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
         const fileNameLower = file.name.toLowerCase();
 
         const isAccepted = acceptedTypesArray.some(acceptedType => {
-          if (acceptedType.startsWith('.')) { // extension check
-            return fileNameLower.endsWith(acceptedType);
-          }
-          if (acceptedType.endsWith('/*')) { // wildcard mime type
-            return fileTypeLower.startsWith(acceptedType.slice(0, -1));
-          }
+          if (acceptedType.startsWith('.')) return fileNameLower.endsWith(acceptedType);
+          if (acceptedType.endsWith('/*')) return fileTypeLower.startsWith(acceptedType.slice(0, -1));
           return fileTypeLower === acceptedType;
         });
 
@@ -79,27 +82,20 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
             return;
         }
 
-        const baseFile: AppFile = {
+        const baseFile: Omit<AppFile, 'type'> = {
           id: `${file.name}-${file.lastModified}-${Math.random()}`,
           file,
-          type: 'image', // Assume image for preview purposes, backend handles it
         };
 
         if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-             resolve({ ...baseFile, previewUrl: e.target?.result as string });
-          };
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
+          resolve({ ...baseFile, type: 'image', previewUrl: URL.createObjectURL(file) });
         } else {
-          // For non-image files, don't create a preview URL, show generic icon
           resolve({ ...baseFile, type: 'text' });
         }
       });
     });
 
-    const newAppFiles = (await Promise.all(newFilesPromises)).filter(f => f !== null) as AppFile[];
+    const newAppFiles = (await Promise.all(newFilesPromises)).filter((f): f is AppFile => f !== null);
     const rejectedCount = files.length - newAppFiles.length;
 
     if (rejectedCount > 0) {
@@ -112,6 +108,11 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
   };
 
   const handleConvertToPdf = useCallback(async () => {
+    if (!isClientSideCompatible) {
+        setError("This file type requires server-side processing, which is not available in this demonstration. Only image and text conversions are supported.");
+        return;
+    }
+    
     const filesToConvert = appFiles;
     if (filesToConvert.length === 0) {
       setError(`Please select at least one file to convert.`);
@@ -120,21 +121,61 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
 
     setIsConverting(true);
     setError(null);
-    setProgressMessage('Initializing...');
+    setProgressMessage('Initializing PDF...');
 
     try {
-      const formData = new FormData();
-      filesToConvert.forEach(appFile => {
-        formData.append('file', appFile.file);
-      });
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', hotfixes: ['px_scaling'] });
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = doc.internal.pageSize.getHeight();
 
-      const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgressMessage);
+      for (let i = 0; i < filesToConvert.length; i++) {
+        const appFile = filesToConvert[i];
+        setProgressMessage(`Processing file ${i + 1}/${filesToConvert.length}: ${appFile.file.name}`);
+        if (i > 0) doc.addPage();
 
-      const url = URL.createObjectURL(blob);
+        if (appFile.type === 'image') {
+          await new Promise<void>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              const aspectRatio = img.width / img.height;
+              let imgWidth = pdfWidth;
+              let imgHeight = pdfWidth / aspectRatio;
+              if (imgHeight > pdfHeight) {
+                imgHeight = pdfHeight;
+                imgWidth = pdfHeight * aspectRatio;
+              }
+              const x = (pdfWidth - imgWidth) / 2;
+              const y = (pdfHeight - imgHeight) / 2;
+              doc.addImage(img.src, 'auto', x, y, imgWidth, imgHeight);
+              resolve();
+            };
+            img.onerror = () => reject(new Error(`Could not load image: ${appFile.file.name}`));
+            img.src = appFile.previewUrl!;
+          });
+        } else { // 'text'
+            const text = await appFile.file.text();
+            const margin = 40;
+            const lines = doc.splitTextToSize(text, pdfWidth - 2 * margin);
+            let y = margin;
+            doc.setFontSize(12);
+            lines.forEach((line: string) => {
+              if (y > pdfHeight - margin) {
+                doc.addPage();
+                y = margin;
+              }
+              doc.text(line, margin, y);
+              y += doc.getLineHeight();
+            });
+        }
+      }
+
+      setProgressMessage('Finalizing PDF...');
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
       setPdfUrl(url);
-      setDownloadName(filename);
+      setDownloadName('lolopdf_converted.pdf');
       setAppFiles([]);
-
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "An unknown error occurred during PDF conversion.");
@@ -142,7 +183,7 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
       setIsConverting(false);
       setProgressMessage('');
     }
-  }, [appFiles]);
+  }, [appFiles, isClientSideCompatible]);
 
   const handleAddMoreFiles = () => {
     fileInputRef.current?.click();

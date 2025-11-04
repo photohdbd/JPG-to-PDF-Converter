@@ -40,7 +40,7 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
       const formData = new FormData();
       formData.append('file', file);
       
-      const { blob, filename } = await callStirlingApi('/pdf-to-word', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/convert/pdf-to-word', formData, setProgressMessage);
 
       setResultUrl(URL.createObjectURL(blob));
       setFileName(filename);

@@ -70,7 +70,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
         formData.append('file', pdfFile.file);
       });
 
-      const { blob, filename } = await callStirlingApi('/merge', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/merge', formData, setProgressMessage);
       
       const url = URL.createObjectURL(blob);
       setMergedPdfUrl(url);

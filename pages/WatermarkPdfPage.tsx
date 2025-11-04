@@ -97,7 +97,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
         formData.append('image', image.file);
       }
 
-      const { blob, filename } = await callStirlingApi('/add-watermark', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/add-watermark', formData, setProgressMessage);
       
       const url = URL.createObjectURL(blob);
       setResultUrl(url);

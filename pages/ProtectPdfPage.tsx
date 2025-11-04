@@ -41,7 +41,7 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
       formData.append('file', pdfFile.file);
       formData.append('password', password);
       
-      const { blob, filename } = await callStirlingApi('/add-password', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/add-password', formData, setProgressMessage);
 
       const url = URL.createObjectURL(blob);
       setResultUrl(url);

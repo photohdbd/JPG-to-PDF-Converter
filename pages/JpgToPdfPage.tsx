@@ -5,7 +5,8 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
+
+declare const jspdf: any;
 
 export type AppFile = {
   id: string;
@@ -59,7 +60,7 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
         const baseFile = {
           id: `${file.name}-${file.lastModified}-${Math.random()}`,
           file,
-          type: fileType,
+          type: fileType as 'image' | 'unsupported',
         };
 
         if (fileType === 'image') {
@@ -92,19 +93,68 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
 
     setIsConverting(true);
     setError(null);
-    setProgressMessage('Initializing...');
+    setProgressMessage('Initializing PDF generation...');
 
     try {
-      const formData = new FormData();
-      filesToConvert.forEach(appFile => {
-        formData.append('file', appFile.file);
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: 'a4',
+        hotfixes: ['px_scaling'],
       });
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = doc.internal.pageSize.getHeight();
 
-      const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgressMessage);
+      for (let i = 0; i < filesToConvert.length; i++) {
+        const file = filesToConvert[i];
+        setProgressMessage(`Processing image ${i + 1} of ${filesToConvert.length}...`);
 
-      const url = URL.createObjectURL(blob);
+        const reader = new FileReader();
+        const promise = new Promise<{ data: string, width: number, height: number }>((resolve, reject) => {
+          reader.onload = (event) => {
+            if (event.target?.result) {
+              const img = new Image();
+              img.onload = () => {
+                resolve({ data: event.target!.result as string, width: img.width, height: img.height });
+              };
+              img.onerror = () => reject(new Error(`Could not load image: ${file.file.name}`));
+              img.src = event.target.result as string;
+            } else {
+              reject(new Error(`Could not read file: ${file.file.name}`));
+            }
+          };
+          reader.onerror = () => reject(new Error(`File reading error for ${file.file.name}`));
+          reader.readAsDataURL(file.file);
+        });
+
+        const { data, width, height } = await promise;
+        
+        const aspectRatio = width / height;
+        let imgWidth = pdfWidth;
+        let imgHeight = pdfWidth / aspectRatio;
+
+        if (imgHeight > pdfHeight) {
+            imgHeight = pdfHeight;
+            imgWidth = pdfHeight * aspectRatio;
+        }
+
+        const x = (pdfWidth - imgWidth) / 2;
+        const y = (pdfHeight - imgHeight) / 2;
+
+        if (i > 0) {
+          doc.addPage();
+        }
+        
+        doc.addImage(data, 'JPEG', x, y, imgWidth, imgHeight);
+      }
+
+      setProgressMessage('Finalizing PDF...');
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      
       setPdfUrl(url);
-      setDownloadName(filename);
+      setDownloadName('lolopdf_converted.pdf');
       setAppFiles([]);
 
     } catch (err) {

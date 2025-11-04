@@ -55,7 +55,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
     try {
         const formData = new FormData();
         formData.append('file', file);
-        const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgress);
+        const { blob, filename } = await callStirlingApi('/api/v1/general/convert-to-pdf', formData, setProgress);
         
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);

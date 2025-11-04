@@ -45,33 +45,44 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
 
     let unsupportedDocCount = 0;
 
-    const newFiles: DocxFile[] = Array.from(files).map(file => {
+    const mappedFiles = Array.from(files).map(file => {
       const fileNameLower = file.name.toLowerCase();
       const isDocx = file.type === docxMimeType || fileNameLower.endsWith(docxExtension);
       const isDoc = file.type === docMimeType || fileNameLower.endsWith(docExtension);
 
-      if (isDoc) unsupportedDocCount++;
+      if (isDocx) {
+        return {
+          id: `${file.name}-${file.lastModified}-${Math.random()}`,
+          file,
+          status: 'supported' as const,
+        };
+      }
+      if (isDoc) {
+        unsupportedDocCount++;
+        return {
+          id: `${file.name}-${file.lastModified}-${Math.random()}`,
+          file,
+          status: 'unsupported' as const,
+        };
+      }
+      return null;
+    });
 
-      // Fix: Explicitly define status type to help TypeScript inference.
-      const status: 'supported' | 'unsupported' = isDocx ? 'supported' : 'unsupported';
-
-      return {
-        id: `${file.name}-${file.lastModified}-${Math.random()}`,
-        file,
-        status: status,
-      };
-    }).filter(f => f.status === 'supported' || f.status === 'unsupported');
+    const newFiles = mappedFiles.filter((f): f is DocxFile => f !== null);
     
     const rejectedCount = files.length - newFiles.length;
 
-    let errorMessage = '';
+    const errorParts = [];
     if (rejectedCount > 0) {
-      errorMessage += `${rejectedCount} file(s) were not valid Word documents and were ignored. `;
+      errorParts.push(`${rejectedCount} file(s) were not valid Word documents and were ignored.`);
     }
     if (unsupportedDocCount > 0) {
-        errorMessage += `${unsupportedDocCount} .doc file(s) were ignored. The classic .doc format isn't supported. Please re-save them as modern .docx files first.`;
+        errorParts.push(`${unsupportedDocCount} .doc file(s) were ignored. The classic .doc format isn't supported. Please re-save them as modern .docx files first.`);
     }
-    if(errorMessage) setError(errorMessage.trim());
+    
+    if (errorParts.length > 0) {
+      setError(errorParts.join(' '));
+    }
     
     if (newFiles.length > 0) {
       setDocxFiles(prev => [...prev, ...newFiles]);
@@ -95,7 +106,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
         formData.append('file', docxFile.file);
       });
 
-      const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/convert-to-pdf', formData, setProgressMessage);
       
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);

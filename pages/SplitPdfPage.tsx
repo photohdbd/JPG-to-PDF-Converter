@@ -173,7 +173,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
       formData.append('file', pdfFile.file);
       formData.append('range', toRangeString(pagesToKeep));
       
-      const { blob, filename } = await callStirlingApi('/split/range', formData, setProgressMessage);
+      const { blob, filename } = await callStirlingApi('/api/v1/general/split/range', formData, setProgressMessage);
 
       const url = URL.createObjectURL(blob);
       setSplitPdfUrl(url);
