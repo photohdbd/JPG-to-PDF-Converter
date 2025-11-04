@@ -112,7 +112,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
       for (const [index, docxFile] of filesToConvert.entries()) {
         const result = await mammoth.convertToHtml({ arrayBuffer: docxFile.arrayBuffer });
         // Add a wrapper div to contain the content of one document
-        combinedHtml += `<div class="document-container"><h1>Document: ${docxFile.file.name}</h1>${result.value}</div>`;
+        combinedHtml += `<div class="document-container">${result.value}</div>`;
         // Add a page break for the next document
         if (index < filesToConvert.length - 1) {
             combinedHtml += '<div class="page-break"></div>';
@@ -123,20 +123,22 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
         <html>
           <head>
             <style>
-              body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
+              body { font-family: 'NotoSansBengali', 'NotoSans', sans-serif; font-size: 10pt; line-height: 1.4; color: #000; }
               .page-break { page-break-before: always; }
-              .document-container { margin: 20px; }
-              h1, h2, h3, h4, h5, h6 { font-family: 'Arial', sans-serif; color: #000; margin-top: 1.2em; margin-bottom: 0.5em; line-height: 1.2; }
-              h1 { font-size: 20pt; font-weight: bold; }
-              h2 { font-size: 18pt; font-weight: bold; }
-              h3 { font-size: 16pt; font-weight: bold; }
-              p, ul, ol, table { margin-bottom: 1em; }
-              ul, ol { padding-left: 40px; }
-              table { border-collapse: collapse; width: 100%; }
-              th, td { border: 1px solid #000; padding: 5px; text-align: left; vertical-align: top; }
+              .document-container { }
+              h1, h2, h3, h4, h5, h6 { font-family: 'NotoSansBengali', 'NotoSans', sans-serif; color: #000; margin-top: 1.2em; margin-bottom: 0.5em; line-height: 1.2; font-weight: bold; }
+              h1 { font-size: 18pt; }
+              h2 { font-size: 16pt; }
+              h3 { font-size: 14pt; }
+              p, ul, ol, table { margin-bottom: 0.8em; word-wrap: break-word; overflow-wrap: break-word; }
+              ul, ol { padding-left: 30px; }
+              table { border-collapse: collapse; width: 100%; page-break-inside: auto; }
+              tr { page-break-inside: avoid; page-break-after: auto; }
+              th, td { border: 1px solid #ccc; padding: 4px; text-align: left; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
               th { background-color: #f2f2f2; font-weight: bold; }
               strong, b { font-weight: bold; }
               em, i { font-style: italic; }
+              a { color: #0000ee; text-decoration: underline; }
             </style>
           </head>
           <body>${combinedHtml}</body>
@@ -150,10 +152,64 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
           setPdfUrl(url);
           setDocxFiles([]);
         },
-        margin: [60, 60, 60, 60],
+        margin: [40, 40, 40, 40],
         autoPaging: 'text',
-        width: 475, // A4 width in points (595) - margins (120)
+        width: 515, // A4 width (595) - margins (80)
         windowWidth: 1200, // Larger window to help with layout calculations
+        html2canvas: {
+            scale: 3, // Increased scale for better quality
+            useCORS: true
+        },
+        fontFaces: [
+            {
+                family: 'NotoSans',
+                style: 'normal',
+                weight: 'normal',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Regular.ttf', format: 'truetype' }]
+            },
+            {
+                family: 'NotoSans',
+                style: 'italic',
+                weight: 'normal',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Italic.ttf', format: 'truetype' }]
+            },
+            {
+                family: 'NotoSans',
+                style: 'normal',
+                weight: 'bold',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Bold.ttf', format: 'truetype' }]
+            },
+            {
+                family: 'NotoSans',
+                style: 'italic',
+                weight: 'bold',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-BoldItalic.ttf', format: 'truetype' }]
+            },
+            {
+                family: 'NotoSansBengali',
+                style: 'normal',
+                weight: 'normal',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Regular.ttf', format: 'truetype' }]
+            },
+            {
+                family: 'NotoSansBengali',
+                style: 'italic',
+                weight: 'normal',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Italic.ttf', format: 'truetype' }]
+            },
+            {
+                family: 'NotoSansBengali',
+                style: 'normal',
+                weight: 'bold',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Bold.ttf', format: 'truetype' }]
+            },
+            {
+                family: 'NotoSansBengali',
+                style: 'italic',
+                weight: 'bold',
+                src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-BoldItalic.ttf', format: 'truetype' }]
+            }
+        ]
       });
       
     } catch (err) {

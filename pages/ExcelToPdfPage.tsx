@@ -72,13 +72,23 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
         <html>
           <head>
             <style>
-              body { font-family: Arial, sans-serif; font-size: 8pt; }
+              body { font-family: 'NotoSansBengali', 'NotoSans', sans-serif; font-size: 8pt; line-height: 1.4; color: #000; }
               .page-break { page-break-before: always; }
-              .sheet-container { }
-              h2 { font-size: 14pt; font-weight: bold; margin-bottom: 10px; }
-              table { border-collapse: collapse; width: 100%; font-size: 8pt; table-layout: fixed; word-wrap: break-word; }
-              th, td { border: 1px solid #ccc; padding: 4px; text-align: left; overflow-wrap: break-word; }
-              th { background-color: #f2f2f2; font-weight: bold; }
+              .sheet-container { padding-top: 20px; }
+              h2 { font-family: 'NotoSansBengali', 'NotoSans', sans-serif; font-size: 14pt; font-weight: bold; margin-bottom: 10px; }
+              table { border-collapse: collapse; width: 100%; font-size: 8pt; table-layout: auto; border: 1px solid #000; }
+              th, td { 
+                border: 1px solid #000; 
+                padding: 5px; 
+                text-align: left; 
+                vertical-align: top;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              th { background-color: #f0f0f0; font-weight: bold; }
+              strong, b { font-weight: bold; }
+              em, i { font-style: italic; }
             </style>
           </head>
           <body>${combinedHtml}</body>
@@ -91,10 +101,64 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
                 const url = URL.createObjectURL(pdfBlob);
                 setPdfUrl(url);
             },
-            margin: [40, 30, 40, 30],
-            autoPaging: 'slice',
-            width: 780, // A4 landscape width (842) - margins
+            margin: [40, 40, 40, 40],
+            autoPaging: 'text',
+            width: 762, // A4 landscape width (842) - margins (80)
             windowWidth: 1500,
+            html2canvas: {
+                scale: 3, // Higher scale for better quality
+                useCORS: true
+            },
+            fontFaces: [
+                {
+                    family: 'NotoSans',
+                    style: 'normal',
+                    weight: 'normal',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Regular.ttf', format: 'truetype' }]
+                },
+                {
+                    family: 'NotoSans',
+                    style: 'italic',
+                    weight: 'normal',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Italic.ttf', format: 'truetype' }]
+                },
+                {
+                    family: 'NotoSans',
+                    style: 'normal',
+                    weight: 'bold',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Bold.ttf', format: 'truetype' }]
+                },
+                {
+                    family: 'NotoSans',
+                    style: 'italic',
+                    weight: 'bold',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-BoldItalic.ttf', format: 'truetype' }]
+                },
+                {
+                    family: 'NotoSansBengali',
+                    style: 'normal',
+                    weight: 'normal',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Regular.ttf', format: 'truetype' }]
+                },
+                {
+                    family: 'NotoSansBengali',
+                    style: 'italic',
+                    weight: 'normal',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Italic.ttf', format: 'truetype' }]
+                },
+                {
+                    family: 'NotoSansBengali',
+                    style: 'normal',
+                    weight: 'bold',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Bold.ttf', format: 'truetype' }]
+                },
+                {
+                    family: 'NotoSansBengali',
+                    style: 'italic',
+                    weight: 'bold',
+                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-BoldItalic.ttf', format: 'truetype' }]
+                }
+            ]
         });
 
     } catch (err) {
