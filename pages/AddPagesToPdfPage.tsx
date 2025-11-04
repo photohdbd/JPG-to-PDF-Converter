@@ -1,25 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PdfUpload } from '../components/PdfUpload';
 import { DownloadScreen } from '../components/DownloadScreen';
-import { LoaderIcon, AlertTriangleIcon, PlusIcon, XIcon, ArrowRightIcon, RefreshCwIcon, TrashIcon } from '../components/Icons';
+import { LoaderIcon, AlertTriangleIcon, PlusIcon, RefreshCwIcon, TrashIcon, ArrowRightIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { callStirlingApi } from '../utils';
 
-declare const PDFLib: any;
 declare const pdfjsLib: any;
 
 type PageRepresentation = {
   id: string;
   previewUrl: string; // data URL from canvas rendering
-  sourceType: 'original' | 'newImage' | 'newPdf';
-  sourceData: {
-    // For 'original' and 'newPdf'
-    pdfArrayBuffer?: ArrayBuffer;
-    pdfFileName?: string;
-    pageIndex?: number; // 0-based index
-    // For 'newImage'
-    imageFile?: File;
-  };
+  sourceFile: File;
 };
 
 interface AddPagesToPdfPageProps {
@@ -27,7 +19,6 @@ interface AddPagesToPdfPageProps {
 }
 
 export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate }) => {
-  const [initialPdf, setInitialPdf] = useState<{ file: File, arrayBuffer: ArrayBuffer } | null>(null);
   const [pages, setPages] = useState<PageRepresentation[]>([]);
   
   const [isProcessing, setIsProcessing] = useState(false);
@@ -45,14 +36,12 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
     }
     return () => {
-        // Clean up object URLs
         pages.forEach(p => URL.revokeObjectURL(p.previewUrl));
         if (resultUrl) URL.revokeObjectURL(resultUrl);
     }
   }, []);
 
   const reset = () => {
-    setInitialPdf(null);
     pages.forEach(p => URL.revokeObjectURL(p.previewUrl));
     setPages([]);
     setIsProcessing(false);
@@ -63,14 +52,15 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
     setError(null);
   };
   
-  const renderPdfToThumbnails = async (file: File, arrayBuffer: ArrayBuffer, sourceType: 'original' | 'newPdf'): Promise<PageRepresentation[]> => {
+  const renderPdfToThumbnails = async (file: File): Promise<PageRepresentation[]> => {
+      const arrayBuffer = await file.arrayBuffer();
       const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
       const pdf = await loadingTask.promise;
       const numPages = pdf.numPages;
       const newPages: PageRepresentation[] = [];
 
       for (let i = 1; i <= numPages; i++) {
-        setProcessingMessage(`Rendering page ${i} of ${numPages}...`);
+        setProcessingMessage(`Rendering page ${i} of ${numPages} from ${file.name}...`);
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: 1 });
         const canvas = document.createElement('canvas');
@@ -83,37 +73,12 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
             newPages.push({
                 id: `page_${Date.now()}_${i}`,
                 previewUrl: canvas.toDataURL(),
-                sourceType,
-                sourceData: {
-                    pdfArrayBuffer: arrayBuffer,
-                    pdfFileName: file.name,
-                    pageIndex: i - 1
-                }
+                sourceFile: file
             });
         }
       }
       return newPages;
   }
-
-  const handleInitialFileChange = async (files: FileList | null) => {
-    if (!files || !files.length) return;
-    reset();
-    const file = files[0];
-    if (file.type !== 'application/pdf') return setError('Please select a valid PDF file.');
-    
-    setIsProcessing(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      setInitialPdf({ file, arrayBuffer });
-      const renderedPages = await renderPdfToThumbnails(file, arrayBuffer, 'original');
-      setPages(renderedPages);
-    } catch (e) {
-      setError('Could not read PDF. It may be corrupt or password protected.');
-    } finally {
-      setIsProcessing(false);
-      setProcessingMessage('');
-    }
-  };
   
   const handleAddFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -127,13 +92,11 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
             newPages.push({
                 id: `page_${Date.now()}_${file.name}`,
                 previewUrl,
-                sourceType: 'newImage',
-                sourceData: { imageFile: file }
+                sourceFile: file
             });
         } else if (file.type === 'application/pdf') {
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                const renderedPages = await renderPdfToThumbnails(file, arrayBuffer, 'newPdf');
+                const renderedPages = await renderPdfToThumbnails(file);
                 newPages = [...newPages, ...renderedPages];
             } catch (e) {
                 setError(`Could not process ${file.name}. It may be corrupt or protected.`);
@@ -143,84 +106,25 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
     setPages(prev => [...prev, ...newPages]);
     setIsProcessing(false);
   }
-  
-  const convertToPng = (file: File): Promise<ArrayBuffer> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return reject(new Error('Could not get canvas context'));
-                ctx.drawImage(img, 0, 0);
-                canvas.toBlob(async (blob) => {
-                    if (blob) {
-                        resolve(await blob.arrayBuffer());
-                    } else {
-                        reject(new Error('Canvas to Blob conversion failed'));
-                    }
-                }, 'image/png');
-            };
-            img.onerror = (err) => reject(err);
-            img.src = event.target?.result as string;
-        };
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-    });
-};
 
   const handleSave = async () => {
-    if (!pages.length || !initialPdf) return;
+    if (!pages.length) return;
     setIsProcessing(true);
     setProcessingMessage('Assembling new PDF...');
     try {
-        const { PDFDocument } = PDFLib;
-        const finalPdfDoc = await PDFDocument.create();
-        const loadedPdfs = new Map<string, any>();
-
-        for (const [index, page] of pages.entries()) {
-            setProcessingMessage(`Adding page ${index + 1} of ${pages.length}...`);
-            const { sourceType, sourceData } = page;
-            
-            if (sourceType === 'original' || sourceType === 'newPdf') {
-                const { pdfArrayBuffer, pdfFileName, pageIndex } = sourceData;
-                let sourcePdfDoc = loadedPdfs.get(pdfFileName!);
-                if (!sourcePdfDoc) {
-                    sourcePdfDoc = await PDFDocument.load(pdfArrayBuffer!);
-                    loadedPdfs.set(pdfFileName!, sourcePdfDoc);
-                }
-                const [copiedPage] = await finalPdfDoc.copyPages(sourcePdfDoc, [pageIndex!]);
-                finalPdfDoc.addPage(copiedPage);
-            } else if (sourceType === 'newImage') {
-                const { imageFile } = sourceData;
-                let imageBytes;
-                if (imageFile!.type === 'image/webp') {
-                    imageBytes = await convertToPng(imageFile!);
-                } else {
-                    imageBytes = await imageFile!.arrayBuffer();
-                }
-
-                const image = imageFile!.type.includes('png') || imageFile!.type === 'image/webp'
-                    ? await finalPdfDoc.embedPng(imageBytes)
-                    : await finalPdfDoc.embedJpg(imageBytes);
-                
-                const imagePage = finalPdfDoc.addPage([image.width, image.height]);
-                imagePage.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
-            }
-        }
-
-        const baseName = initialPdf.file.name.replace(/\.[^/.]+$/, "");
-        setDownloadName(`${baseName}_combined_LOLOPDF.pdf`);
+        const formData = new FormData();
+        pages.forEach(page => {
+            formData.append('file', page.sourceFile);
+        });
         
-        const pdfBytes = await finalPdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        setResultUrl(URL.createObjectURL(blob));
+        const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProcessingMessage);
+        
+        const url = URL.createObjectURL(blob);
+        setResultUrl(url);
+        setDownloadName(filename);
     } catch(e) {
         console.error(e);
-        setError("An error occurred while creating the PDF.");
+        setError(e instanceof Error ? e.message : "An error occurred while creating the PDF.");
     } finally {
         setIsProcessing(false);
     }
@@ -236,7 +140,6 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
       }));
   }
   
-  // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => { dragItem.current = position; };
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => { dragOverItem.current = position; };
   const handleDragEnd = () => {
@@ -286,21 +189,21 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
       <div className="w-full flex flex-col items-center justify-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Add Pages to PDF</h1>
         <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-2xl text-center">
-          Upload your base PDF, then add more pages from images (JPG, PNG, WEBP) or other PDFs. Drag to reorder.
+          Upload your base PDF, then add more pages from images (JPG, PNG) or other PDFs. Drag to reorder.
         </p>
         
         {error && <div className="bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 p-3 rounded mb-4 w-full flex items-center"><AlertTriangleIcon className="w-5 h-5 mr-2" />{error}<button onClick={() => setError(null)} className="ml-auto font-bold">X</button></div>}
         {isProcessing && <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50"><LoaderIcon /><p className="text-xl text-white mt-4">{processingMessage}</p></div>}
         
         {resultUrl ? <DownloadScreen files={[{ url: resultUrl, name: downloadName }]} onStartOver={reset} />
-        : !initialPdf ? <PdfUpload onFilesSelect={handleInitialFileChange} multiple={false} />
+        : !pages.length ? <PdfUpload onFilesSelect={handleAddFiles} multiple={true} />
         : renderEditor()}
 
         <input
             type="file"
             ref={fileInputRef}
             onChange={(e) => handleAddFiles(e.target.files)}
-            accept="application/pdf,image/jpeg,image/png,image/webp"
+            accept="application/pdf,image/jpeg,image/png"
             multiple
             className="hidden"
         />

@@ -4,8 +4,8 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { callStirlingApi } from '../utils';
 
-declare const PDFLib: any;
 declare const pdfjsLib: any;
 
 interface WatermarkPdfPageProps {
@@ -13,12 +13,12 @@ interface WatermarkPdfPageProps {
 }
 
 export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }) => {
-  const [pdfFile, setPdfFile] = useState<{ file: File; arrayBuffer: ArrayBuffer } | null>(null);
+  const [pdfFile, setPdfFile] = useState<{ file: File } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   const [mode, setMode] = useState<'text' | 'image'>('text');
   const [text, setText] = useState('CONFIDENTIAL');
-  const [image, setImage] = useState<{ arrayBuffer: ArrayBuffer; url: string } | null>(null);
+  const [image, setImage] = useState<{ file: File; url: string } | null>(null);
   
   const [opacity, setOpacity] = useState(0.2);
   const [rotation, setRotation] = useState(-45);
@@ -28,6 +28,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -43,9 +44,10 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
       if (file.type !== 'application/pdf') return setError("Please upload a valid PDF file.");
       reset();
       setIsProcessing(true);
+      setProgressMessage("Rendering preview...");
       try {
         const arrayBuffer = await file.arrayBuffer();
-        setPdfFile({ file, arrayBuffer });
+        setPdfFile({ file });
         
         const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
         const pdf = await loadingTask.promise;
@@ -63,12 +65,12 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
         setError("Could not read PDF. It might be corrupted or password-protected.");
       } finally {
         setIsProcessing(false);
+        setProgressMessage("");
       }
     } else { // image
       if (!file.type.startsWith('image/')) return setError("Please upload a valid image file (PNG, JPG).");
-      const arrayBuffer = await file.arrayBuffer();
       const url = URL.createObjectURL(file);
-      setImage({ arrayBuffer, url });
+      setImage({ file, url });
     }
   };
 
@@ -79,63 +81,45 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
 
     setIsProcessing(true);
     setError(null);
+    setProgressMessage("Applying watermark...");
 
     try {
-      const { PDFDocument, rgb, degrees } = PDFLib;
-      const pdfDoc = await PDFDocument.load(pdfFile.arrayBuffer);
+      const formData = new FormData();
+      formData.append('file', pdfFile.file);
+      formData.append('watermark_type', mode);
+      formData.append('opacity', String(opacity));
+      formData.append('rotation', String(rotation));
       
-      let watermark;
-      if (mode === 'image' && image) {
-        if(image.arrayBuffer.byteLength > 0) {
-             watermark = await pdfDoc.embedPng(image.arrayBuffer);
-        }
-      }
-      
-      const pages = pdfDoc.getPages();
-      for (const page of pages) {
-        const { width, height } = page.getSize();
-        if (mode === 'text') {
-            page.drawText(text, {
-                x: width / 2,
-                y: height / 2,
-                size: fontSize,
-                color: rgb(0.5, 0.5, 0.5),
-                opacity: opacity,
-                rotate: degrees(rotation),
-                // Font would ideally be embedded, but using standard for simplicity
-            });
-        } else if (watermark) {
-            const imgDims = watermark.scale(0.5);
-            page.drawImage(watermark, {
-                x: width / 2 - imgDims.width / 2,
-                y: height / 2 - imgDims.height / 2,
-                width: imgDims.width,
-                height: imgDims.height,
-                opacity: opacity,
-                rotate: degrees(rotation),
-            });
-        }
+      if (mode === 'text') {
+        formData.append('text', text);
+        formData.append('font_size', String(fontSize));
+      } else if (image) {
+        formData.append('image', image.file);
       }
 
-      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
-      setDownloadName(`${baseName}_watermarked_LOLOPDF.pdf`);
-
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      setResultUrl(URL.createObjectURL(blob));
+      const { blob, filename } = await callStirlingApi('/add-watermark', formData, setProgressMessage);
+      
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
+      setDownloadName(filename);
     } catch (err) {
       console.error(err)
-      setError("Failed to add watermark. The PDF might be corrupted or protected.");
+      setError(err instanceof Error ? err.message : "Failed to add watermark. The PDF might be corrupted or protected.");
     } finally {
       setIsProcessing(false);
+      setProgressMessage('');
     }
   };
 
   const reset = () => {
     setPdfFile(null);
+    if(resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
     setDownloadName('');
+    if(previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
+    if(image?.url) URL.revokeObjectURL(image.url);
+    setImage(null);
     setError(null);
   };
   
@@ -219,7 +203,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
         {isProcessing && !resultUrl && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
-                <p className="text-xl text-white mt-4">Applying Watermark...</p>
+                <p className="text-xl text-white mt-4">{progressMessage}</p>
             </div>
         )}
 

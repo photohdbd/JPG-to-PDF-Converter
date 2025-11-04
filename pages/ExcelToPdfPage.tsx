@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileUpload } from '../components/FileUpload';
 import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const XLSX: any;
-declare const jspdf: any;
+import { callStirlingApi } from '../utils';
 
 interface ExcelToPdfPageProps {
   onNavigate: (page: Page) => void;
@@ -18,6 +16,12 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
+
+   useEffect(() => {
+    return () => {
+        if(pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
 
   const handleFileChange = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -45,125 +49,19 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
 
     setIsConverting(true);
     setError(null);
-
-    const baseName = file.name.replace(/\.[^/.]+$/, "");
-    setDownloadName(`${baseName}_LOLOPDF.pdf`);
+    setProgress('Initializing...');
 
     try {
-      const { jsPDF } = jspdf;
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const doc = new jsPDF('l', 'pt', 'a4');
-      
-      const numSheets = workbook.SheetNames.length;
-      let combinedHtml = '';
-
-      for (const [index, sheetName] of workbook.SheetNames.entries()) {
-        setProgress(`Processing sheet ${index + 1} of ${numSheets}: ${sheetName}...`);
-        const worksheet = workbook.Sheets[sheetName];
-        const html = XLSX.utils.sheet_to_html(worksheet);
-        combinedHtml += `<div class="sheet-container"><h2>${sheetName}</h2>${html}</div>`;
-        if (index < numSheets - 1) {
-             combinedHtml += '<div class="page-break"></div>';
-        }
-      }
-
-       const styledHtml = `
-        <html>
-          <head>
-            <style>
-              body { font-family: 'NotoSansBengali', 'NotoSans', sans-serif; font-size: 8pt; line-height: 1.4; color: #000; }
-              .page-break { page-break-before: always; }
-              .sheet-container { padding-top: 20px; }
-              h2 { font-family: 'NotoSansBengali', 'NotoSans', sans-serif; font-size: 14pt; font-weight: bold; margin-bottom: 10px; }
-              table { border-collapse: collapse; width: 100%; font-size: 8pt; table-layout: auto; border: 1px solid #000; }
-              th, td { 
-                border: 1px solid #000; 
-                padding: 5px; 
-                text-align: left; 
-                vertical-align: top;
-                white-space: normal;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-              }
-              th { background-color: #f0f0f0; font-weight: bold; }
-              strong, b { font-weight: bold; }
-              em, i { font-style: italic; }
-            </style>
-          </head>
-          <body>${combinedHtml}</body>
-        </html>
-      `;
-
-        await doc.html(styledHtml, {
-            callback: function (doc) {
-                const pdfBlob = doc.output('blob');
-                const url = URL.createObjectURL(pdfBlob);
-                setPdfUrl(url);
-            },
-            margin: [40, 40, 40, 40],
-            autoPaging: 'text',
-            width: 762, // A4 landscape width (842) - margins (80)
-            windowWidth: 1500,
-            html2canvas: {
-                scale: 3, // Higher scale for better quality
-                useCORS: true
-            },
-            fontFaces: [
-                {
-                    family: 'NotoSans',
-                    style: 'normal',
-                    weight: 'normal',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Regular.ttf', format: 'truetype' }]
-                },
-                {
-                    family: 'NotoSans',
-                    style: 'italic',
-                    weight: 'normal',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Italic.ttf', format: 'truetype' }]
-                },
-                {
-                    family: 'NotoSans',
-                    style: 'normal',
-                    weight: 'bold',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Bold.ttf', format: 'truetype' }]
-                },
-                {
-                    family: 'NotoSans',
-                    style: 'italic',
-                    weight: 'bold',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-BoldItalic.ttf', format: 'truetype' }]
-                },
-                {
-                    family: 'NotoSansBengali',
-                    style: 'normal',
-                    weight: 'normal',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Regular.ttf', format: 'truetype' }]
-                },
-                {
-                    family: 'NotoSansBengali',
-                    style: 'italic',
-                    weight: 'normal',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Italic.ttf', format: 'truetype' }]
-                },
-                {
-                    family: 'NotoSansBengali',
-                    style: 'normal',
-                    weight: 'bold',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-Bold.ttf', format: 'truetype' }]
-                },
-                {
-                    family: 'NotoSansBengali',
-                    style: 'italic',
-                    weight: 'bold',
-                    src: [{ url: 'https://raw.githack.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali-BoldItalic.ttf', format: 'truetype' }]
-                }
-            ]
-        });
-
+        const formData = new FormData();
+        formData.append('file', file);
+        const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgress);
+        
+        const url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+        setDownloadName(filename);
     } catch (err) {
         console.error(err);
-        setError("Failed to convert spreadsheet. The file may be corrupt or in an unsupported format.");
+        setError(err instanceof Error ? err.message : "Failed to convert spreadsheet. The file may be corrupt or in an unsupported format.");
     } finally {
         setIsConverting(false);
         setProgress('');
@@ -172,6 +70,7 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
   
   const reset = () => {
     setIsConverting(false);
+    if(pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
     setDownloadName('');
     setError(null);

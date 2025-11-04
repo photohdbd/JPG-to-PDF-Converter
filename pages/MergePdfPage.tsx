@@ -5,13 +5,11 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const PDFLib: any;
+import { callStirlingApi } from '../utils';
 
 export type PdfFile = {
   id: string;
   file: File;
-  arrayBuffer: ArrayBuffer;
 };
 
 interface MergePdfPageProps {
@@ -24,6 +22,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,34 +37,20 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
     if (!files) return;
 
     setError(null);
-    const newFilesPromises = Array.from(files).map(file => {
-      return new Promise<PdfFile | null>((resolve) => {
-        if (file.type !== 'application/pdf') {
-            resolve(null);
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve({
-            id: `${file.name}-${file.lastModified}-${Math.random()}`,
-            file,
-            arrayBuffer: e.target?.result as ArrayBuffer,
-          });
-        };
-        reader.onerror = () => resolve(null);
-        reader.readAsArrayBuffer(file);
-      });
-    });
-
-    const newAppFiles = (await Promise.all(newFilesPromises)).filter(Boolean) as PdfFile[];
-    const rejectedCount = files.length - newAppFiles.length;
-
+    const newFiles = Array.from(files)
+      .filter(file => file.type === 'application/pdf')
+      .map(file => ({
+        id: `${file.name}-${file.lastModified}-${Math.random()}`,
+        file,
+      }));
+    
+    const rejectedCount = files.length - newFiles.length;
     if (rejectedCount > 0) {
       setError(`${rejectedCount} file(s) were not valid PDFs and were ignored.`);
     }
     
-    if (newAppFiles.length > 0) {
-      setPdfFiles(prev => [...prev, ...newAppFiles]);
+    if (newFiles.length > 0) {
+      setPdfFiles(prev => [...prev, ...newFiles]);
     }
   };
 
@@ -77,33 +62,27 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
 
     setIsMerging(true);
     setError(null);
+    setProgressMessage('Initializing...');
 
     try {
-      const { PDFDocument } = PDFLib;
-      const mergedPdf = await PDFDocument.create();
-      
-      for (const pdfFile of pdfFiles) {
-        const pdf = await PDFDocument.load(pdfFile.arrayBuffer);
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
-      }
-      
-      const baseName = pdfFiles[0].file.name.replace(/\.[^/.]+$/, "");
-      setDownloadName(`${baseName}_merged_LOLOPDF.pdf`);
+      const formData = new FormData();
+      pdfFiles.forEach(pdfFile => {
+        formData.append('file', pdfFile.file);
+      });
 
-      const mergedPdfBytes = await mergedPdf.save();
-      const pdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(pdfBlob);
+      const { blob, filename } = await callStirlingApi('/merge', formData, setProgressMessage);
       
+      const url = URL.createObjectURL(blob);
       setMergedPdfUrl(url);
+      setDownloadName(filename);
       setPdfFiles([]);
       
-    } catch (err)
- {
+    } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "An unknown error occurred during merging.");
     } finally {
       setIsMerging(false);
+      setProgressMessage('');
     }
   }, [pdfFiles]);
 
@@ -113,6 +92,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
 
   const reset = () => {
     setPdfFiles([]);
+    if(mergedPdfUrl) URL.revokeObjectURL(mergedPdfUrl);
     setMergedPdfUrl(null);
     setDownloadName('');
     setError(null);
@@ -162,6 +142,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
                 <p className="text-xl text-white mt-4">Merging PDFs...</p>
+                <p className="text-md text-gray-300 mt-2">{progressMessage}</p>
             </div>
             )}
             {renderContent()}

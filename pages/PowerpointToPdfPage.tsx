@@ -4,13 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const pptx: any;
-
-interface ImageFile {
-    url: string;
-    name: string;
-}
+import { callStirlingApi } from '../utils';
 
 interface PowerpointToPdfPageProps {
   onNavigate: (page: Page) => void;
@@ -18,16 +12,16 @@ interface PowerpointToPdfPageProps {
 
 export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavigate }) => {
   const [isConverting, setIsConverting] = useState(false);
-  const [imageFiles, setImageFiles] = useState<ImageFile[]>([]);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
   const [downloadName, setDownloadName] = useState('');
 
   useEffect(() => {
     return () => {
-        imageFiles.forEach(file => URL.revokeObjectURL(file.url));
+        if(pdfUrl) URL.revokeObjectURL(pdfUrl);
     };
-  }, [imageFiles]);
+  }, [pdfUrl]);
 
 
   const handleFileChange = async (files: FileList | null) => {
@@ -56,32 +50,19 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
 
     setIsConverting(true);
     setError(null);
+    setProgress('Initializing...');
 
     try {
-        const result = await new pptx.Presentation().loadFile(file);
-        const numSlides = result.slides.length;
-        const newImageFiles: ImageFile[] = [];
-        const baseName = file.name.replace(/\.pptx$/i, '');
-        setDownloadName(`${baseName}_LOLOPDF.zip`);
-
-
-        for (let i = 0; i < numSlides; i++) {
-            setProgress(`Processing slide ${i + 1} of ${numSlides}...`);
-            const slide = result.slides[i];
-            const dataUrl = await slide.render("image");
-            const blob = await (await fetch(dataUrl)).blob();
-
-            newImageFiles.push({
-                url: URL.createObjectURL(blob),
-                name: `${baseName}-slide-${i+1}.png`
-            });
-        }
+        const formData = new FormData();
+        formData.append('file', file);
+        const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgress);
         
-        setImageFiles(newImageFiles);
-
+        const url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+        setDownloadName(filename);
     } catch (err) {
         console.error(err);
-        setError("Failed to convert presentation. The file may be corrupt or in an unsupported format.");
+        setError(err instanceof Error ? err.message : "Failed to convert presentation. The file may be corrupt or in an unsupported format.");
     } finally {
         setIsConverting(false);
         setProgress('');
@@ -90,7 +71,8 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
   
   const reset = () => {
     setIsConverting(false);
-    setImageFiles([]);
+    if(pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
     setError(null);
     setProgress('');
     setDownloadName('');
@@ -102,7 +84,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
         <div className="w-full flex flex-col items-center justify-center">
             <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">PowerPoint to PDF Converter</h1>
             <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-2xl text-center">
-                Convert your PowerPoint (.pptx) presentations into individual high-quality images, perfect for sharing or embedding.
+                Convert your PowerPoint (.pptx) presentations into a high-quality PDF document.
             </p>
             {error && (
             <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-4xl flex items-center shadow-lg">
@@ -121,8 +103,8 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
             </div>
             )}
 
-            {imageFiles.length > 0 ? (
-                <DownloadScreen files={imageFiles} zipFileName={downloadName} onStartOver={reset} />
+            {pdfUrl ? (
+                <DownloadScreen files={[{ url: pdfUrl, name: downloadName }]} onStartOver={reset} />
             ) : (
                 <FileUpload 
                     onFilesSelect={handleFileChange}

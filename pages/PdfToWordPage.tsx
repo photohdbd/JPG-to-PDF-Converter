@@ -4,8 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const pdfjsLib: any;
+import { callStirlingApi } from '../utils';
 
 interface PdfToWordPageProps {
   onNavigate: (page: Page) => void;
@@ -16,13 +15,8 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
+  const [progressMessage, setProgressMessage] = useState('');
 
-  useEffect(() => {
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
-    }
-  }, []);
-  
   useEffect(() => {
       return () => {
           if (resultUrl) URL.revokeObjectURL(resultUrl);
@@ -39,36 +33,30 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
       setError("The selected file is not a PDF. Please choose a valid PDF file.");
       return;
     }
-    setFileName(file.name.replace(/\.pdf$/i, '_LOLOPDF.doc'));
     setIsProcessing(true);
-
+    setProgressMessage('Extracting text...');
+    
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
-      const pdf = await loadingTask.promise;
-      const numPages = pdf.numPages;
-      let fullText = '';
-
-      for (let i = 1; i <= numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n';
-      }
+      const formData = new FormData();
+      formData.append('file', file);
       
-      const blob = new Blob([fullText], { type: 'application/msword' });
+      const { blob, filename } = await callStirlingApi('/pdf-to-word', formData, setProgressMessage);
+
       setResultUrl(URL.createObjectURL(blob));
+      setFileName(filename);
 
     } catch (err) {
       console.error(err);
-      setError("Could not process the PDF. It might be corrupted or password-protected.");
+      setError(err instanceof Error ? err.message : "Could not process the PDF. It might be corrupted or password-protected.");
     } finally {
       setIsProcessing(false);
+      setProgressMessage('');
     }
   };
   
   const reset = () => {
     setIsProcessing(false);
+    if(resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
     setError(null);
     setFileName('');
@@ -97,8 +85,8 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
             )}
             {isProcessing && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
-                <p className="text-xl text-white mt-4">Extracting text...</p>
+                <LoaderIcon />
+                <p className="text-xl text-white mt-4">{progressMessage}</p>
             </div>
             )}
             

@@ -4,28 +4,28 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { callStirlingApi } from '../utils';
 
-declare const PDFLib: any;
 
 interface UnlockPdfPageProps {
   onNavigate: (page: Page) => void;
 }
 
 export const UnlockPdfPage: React.FC<UnlockPdfPageProps> = ({ onNavigate }) => {
-  const [pdfFile, setPdfFile] = useState<{ file: File; arrayBuffer: ArrayBuffer } | null>(null);
+  const [pdfFile, setPdfFile] = useState<{ file: File } | null>(null);
   const [password, setPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
 
   const handleFileChange = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     reset();
     const file = files[0];
     if (file.type !== 'application/pdf') return setError("Please select a valid PDF file.");
-    const arrayBuffer = await file.arrayBuffer();
-    setPdfFile({ file, arrayBuffer });
+    setPdfFile({ file });
   };
 
   const handleProcess = async () => {
@@ -34,30 +34,29 @@ export const UnlockPdfPage: React.FC<UnlockPdfPageProps> = ({ onNavigate }) => {
 
     setIsProcessing(true);
     setError(null);
+    setProgressMessage("Unlocking PDF...");
     try {
-      const { PDFDocument, PasswordResponses } = PDFLib;
-      const pdfDoc = await PDFDocument.load(pdfFile.arrayBuffer, {
-          ownerPassword: password,
-          // Try user password if owner fails
-          passwordCallback: (isUserPassword) => isUserPassword ? password : PasswordResponses.DISMISS,
-      });
-      
-      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
-      setDownloadName(`${baseName}_unlocked_LOLOPDF.pdf`);
+      const formData = new FormData();
+      formData.append('file', pdfFile.file);
+      formData.append('password', password);
 
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      setResultUrl(URL.createObjectURL(blob));
+      const { blob, filename } = await callStirlingApi('/remove-password', formData, setProgressMessage);
+
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
+      setDownloadName(filename);
     } catch (err) {
-      setError("Failed to unlock PDF. The password may be incorrect or the file corrupted.");
+      setError(err instanceof Error ? err.message : "Failed to unlock PDF. The password may be incorrect or the file corrupted.");
     } finally {
       setIsProcessing(false);
+      setProgressMessage('');
     }
   };
 
   const reset = () => {
     setPdfFile(null);
     setPassword('');
+    if(resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
     setDownloadName('');
     setError(null);
@@ -93,7 +92,7 @@ export const UnlockPdfPage: React.FC<UnlockPdfPageProps> = ({ onNavigate }) => {
         {isProcessing && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
-                <p className="text-xl text-white mt-4">Unlocking PDF...</p>
+                <p className="text-xl text-white mt-4">{progressMessage}</p>
             </div>
         )}
 

@@ -5,11 +5,8 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { callStirlingApi } from '../utils';
 
-// This is an external library provided in the HTML
-declare const jspdf: any;
-
-// Re-using the AppFile type from the generic converter page
 export type AppFile = {
   id: string;
   file: File;
@@ -22,7 +19,6 @@ interface JpgToPdfPageProps {
   onNavigate: (page: Page) => void;
 }
 
-// Simplified file type checker specifically for JPG/JPEG
 const getFileType = (file: File): 'image' | 'unsupported' => {
     const fileName = file.name.toLowerCase();
     if (file.type === 'image/jpeg' || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
@@ -37,10 +33,10 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Cleanup object URLs to prevent memory leaks
     return () => {
       appFiles.forEach(appFile => {
         if (appFile.previewUrl) {
@@ -96,55 +92,19 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
 
     setIsConverting(true);
     setError(null);
+    setProgressMessage('Initializing...');
 
     try {
-      const { jsPDF } = jspdf;
-      const doc = new jsPDF();
-      
-      const baseName = filesToConvert[0].file.name.replace(/\.[^/.]+$/, "");
-      const finalName = filesToConvert.length > 1 ? `${baseName}_and_more` : baseName;
-      setDownloadName(`${finalName}_LOLOPDF.pdf`);
+      const formData = new FormData();
+      filesToConvert.forEach(appFile => {
+        formData.append('file', appFile.file);
+      });
 
-      for (let i = 0; i < filesToConvert.length; i++) {
-        const appFile = filesToConvert[i];
-        if (i > 0) {
-          doc.addPage();
-        }
+      const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgressMessage);
 
-        if (appFile.previewUrl) {
-            const img = new Image();
-            img.src = appFile.previewUrl;
-            
-            await new Promise<void>((resolve, reject) => {
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return reject(new Error('Failed to get canvas context.'));
-                    
-                    ctx.drawImage(img, 0, 0);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-
-                    const pageWidth = doc.internal.pageSize.getWidth();
-                    const pageHeight = doc.internal.pageSize.getHeight();
-                    const ratio = Math.min(pageWidth / img.naturalWidth, pageHeight / img.naturalHeight);
-                    const newWidth = img.naturalWidth * ratio;
-                    const newHeight = img.naturalHeight * ratio;
-                    const x = (pageWidth - newWidth) / 2;
-                    const y = (pageHeight - newHeight) / 2;
-
-                    doc.addImage(dataUrl, 'JPEG', x, y, newWidth, newHeight, undefined, 'FAST');
-                    resolve();
-                };
-                img.onerror = () => reject(new Error(`Failed to load image: ${appFile.file.name}`));
-            });
-        }
-      }
-
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
+      const url = URL.createObjectURL(blob);
       setPdfUrl(url);
+      setDownloadName(filename);
       setAppFiles([]);
 
     } catch (err) {
@@ -152,6 +112,7 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
       setError(err instanceof Error ? err.message : "An unknown error occurred during PDF conversion.");
     } finally {
       setIsConverting(false);
+      setProgressMessage('');
     }
   }, [appFiles]);
 
@@ -161,6 +122,7 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
 
   const reset = () => {
     setAppFiles([]);
+    if(pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
     setDownloadName('');
     setError(null);
@@ -216,6 +178,7 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
                 <p className="text-xl text-white mt-4">Converting JPGs to PDF...</p>
+                <p className="text-md text-gray-300 mt-2">{progressMessage}</p>
             </div>
             )}
             {renderContent()}

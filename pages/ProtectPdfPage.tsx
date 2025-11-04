@@ -4,29 +4,28 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const PDFLib: any;
+import { callStirlingApi } from '../utils';
 
 interface ProtectPdfPageProps {
   onNavigate: (page: Page) => void;
 }
 
 export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) => {
-  const [pdfFile, setPdfFile] = useState<{ file: File; arrayBuffer: ArrayBuffer } | null>(null);
+  const [pdfFile, setPdfFile] = useState<{ file: File } | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
 
   const handleFileChange = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     reset();
     const file = files[0];
     if (file.type !== 'application/pdf') return setError("Please select a valid PDF file.");
-    const arrayBuffer = await file.arrayBuffer();
-    setPdfFile({ file, arrayBuffer });
+    setPdfFile({ file });
   };
 
   const handleProcess = async () => {
@@ -36,25 +35,22 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
 
     setIsProcessing(true);
     setError(null);
+    setProgressMessage("Encrypting PDF...");
     try {
-      const { PDFDocument } = PDFLib;
-      const pdfDoc = await PDFDocument.load(pdfFile.arrayBuffer);
+      const formData = new FormData();
+      formData.append('file', pdfFile.file);
+      formData.append('password', password);
       
-      // Basic options, more can be added (e.g., ownerPassword, permissions)
-      const options = {
-        userPassword: password,
-      };
-      
-      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
-      setDownloadName(`${baseName}_protected_LOLOPDF.pdf`);
-      
-      const pdfBytes = await pdfDoc.save({ ...options });
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      setResultUrl(URL.createObjectURL(blob));
+      const { blob, filename } = await callStirlingApi('/add-password', formData, setProgressMessage);
+
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
+      setDownloadName(filename);
     } catch (err) {
-      setError("Failed to protect PDF. The file might be corrupted.");
+      setError(err instanceof Error ? err.message : "Failed to protect PDF. The file might be corrupted.");
     } finally {
       setIsProcessing(false);
+      setProgressMessage('');
     }
   };
 
@@ -62,6 +58,7 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
     setPdfFile(null);
     setPassword('');
     setConfirmPassword('');
+    if(resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
     setDownloadName('');
     setError(null);
@@ -104,7 +101,7 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
         {isProcessing && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
-                <p className="text-xl text-white mt-4">Encrypting PDF...</p>
+                <p className="text-xl text-white mt-4">{progressMessage}</p>
             </div>
         )}
 

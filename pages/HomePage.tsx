@@ -9,7 +9,6 @@ import {
   WordIcon,
   PowerpointIcon,
   ExcelIcon,
-  EditIcon,
   RotateIcon,
   LockIcon,
   UnlockIcon,
@@ -17,6 +16,9 @@ import {
   FileTextIcon,
   HashIcon,
   FilePlus2Icon,
+  BookOpenIcon,
+  PaletteIcon,
+  DraftingCompassIcon,
 } from '../components/Icons';
 
 interface HomePageProps {
@@ -33,15 +35,8 @@ type Tool = {
 
 const toolCategories: { title: string; tools: Tool[] }[] = [
   {
-    title: 'Convert to PDF',
+    title: 'Convert Documents to PDF',
     tools: [
-      {
-        icon: <ImageIcon className="w-10 h-10" />,
-        title: 'JPG to PDF',
-        description: 'Convert JPG images to a single PDF file.',
-        page: 'jpg-to-pdf',
-        color: 'from-red-500 to-orange-600',
-      },
       {
         icon: <WordIcon className="w-10 h-10" />,
         title: 'Word to PDF',
@@ -65,12 +60,106 @@ const toolCategories: { title: string; tools: Tool[] }[] = [
       },
       {
         icon: <FileTextIcon className="w-10 h-10" />,
-        title: 'File to PDF',
-        description: 'Convert various images and text files to PDF.',
+        title: 'Text to PDF',
+        description: 'Convert TXT, RTF, ODT, CSV files to PDF.',
+        page: 'text-to-pdf',
+        color: 'from-gray-500 to-gray-600',
+      },
+    ],
+  },
+  {
+    title: 'Convert Images to PDF',
+    tools: [
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'JPG to PDF',
+        description: 'Convert JPG images to a single PDF file.',
+        page: 'jpg-to-pdf',
+        color: 'from-red-500 to-orange-600',
+      },
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'PNG to PDF',
+        description: 'Convert PNG images to PDF with transparency.',
+        page: 'png-to-pdf',
+        color: 'from-slate-400 to-slate-600',
+      },
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'WebP to PDF',
+        description: 'Convert modern WebP images to PDF.',
+        page: 'webp-to-pdf',
+        color: 'from-green-400 to-teal-500',
+      },
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'HEIC/HEIF to PDF',
+        description: 'Convert Apple\'s HEIC/HEIF photos to PDF.',
+        page: 'heic-to-pdf',
+        color: 'from-blue-300 to-indigo-400',
+      },
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'TIFF to PDF',
+        description: 'Convert single or multi-page TIFF files to PDF.',
+        page: 'tiff-to-pdf',
+        color: 'from-neutral-400 to-neutral-600',
+      },
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'GIF to PDF',
+        description: 'Convert animated GIFs to a PDF sequence.',
+        page: 'gif-to-pdf',
+        color: 'from-purple-400 to-pink-500',
+      },
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'SVG to PDF',
+        description: 'Convert scalable vector graphics to PDF.',
+        page: 'svg-to-pdf',
+        color: 'from-yellow-400 to-orange-500',
+      },
+      {
+        icon: <ImageIcon className="w-10 h-10" />,
+        title: 'BMP to PDF',
+        description: 'Convert Bitmap images to PDF.',
+        page: 'bmp-to-pdf',
+        color: 'from-cyan-400 to-sky-500',
+      },
+    ],
+  },
+  {
+    title: 'Convert E-books & Drawings to PDF',
+    tools: [
+       {
+        icon: <BookOpenIcon className="w-10 h-10" />,
+        title: 'E-book to PDF',
+        description: 'Convert EPUB, MOBI, AZW, FB2 files to PDF.',
+        page: 'ebook-to-pdf',
+        color: 'from-amber-500 to-orange-600',
+      },
+      {
+        icon: <PaletteIcon className="w-10 h-10" />,
+        title: 'Graphics to PDF',
+        description: 'Convert AI, PSD, EPS, INDD, and more to PDF.',
+        page: 'graphics-to-pdf',
+        color: 'from-rose-400 to-fuchsia-500',
+      },
+      {
+        icon: <DraftingCompassIcon className="w-10 h-10" />,
+        title: 'CAD to PDF',
+        description: 'Convert DWG, DXF, DGN drawings to PDF.',
+        page: 'cad-to-pdf',
+        color: 'from-indigo-500 to-blue-600',
+      },
+      {
+        icon: <FileTextIcon className="w-10 h-10" />,
+        title: 'All Files to PDF',
+        description: 'Our universal converter for many file types.',
         page: 'converter',
         color: 'from-blue-500 to-indigo-600',
       },
-    ],
+    ]
   },
   {
     title: 'Convert from PDF',
@@ -148,20 +237,6 @@ const toolCategories: { title: string; tools: Tool[] }[] = [
   {
     title: 'Edit & Secure PDF',
     tools: [
-       {
-        icon: <EditIcon className="w-10 h-10" />,
-        title: 'PDF Editor',
-        description: 'Add text, images, shapes, and signatures to a PDF.',
-        page: 'edit-pdf',
-        color: 'from-blue-500 to-indigo-600',
-      },
-       {
-        icon: <ImageIcon className="w-10 h-10" />, // Placeholder, will be replaced
-        title: 'Sign PDF',
-        description: 'Sign your PDF documents with ease.',
-        page: 'sign',
-        color: 'from-cyan-500 to-teal-600',
-      },
        {
         icon: <HashIcon className="w-10 h-10" />,
         title: 'Add Page Numbers',

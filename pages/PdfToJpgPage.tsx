@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { PdfUpload } from '../components/PdfUpload';
 import { DownloadScreen } from '../components/DownloadScreen';
-import { LoaderIcon, AlertTriangleIcon, DownloadIcon } from '../components/Icons';
+import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const pdfjsLib: any;
-
-interface JpgResult {
-  url: string;
-  name: string;
-}
+import { callStirlingApi } from '../utils';
 
 interface PdfToJpgPageProps {
   onNavigate: (page: Page) => void;
@@ -18,22 +12,16 @@ interface PdfToJpgPageProps {
 
 export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<JpgResult[]>([]);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
-  const [fileName, setFileName] = useState('');
-
-  useEffect(() => {
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
-    }
-  }, []);
+  const [downloadName, setDownloadName] = useState('');
 
   useEffect(() => {
     return () => {
-      results.forEach(result => URL.revokeObjectURL(result.url));
+      if(resultUrl) URL.revokeObjectURL(resultUrl);
     };
-  }, [results]);
+  }, [resultUrl]);
 
   const handleFileChange = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -50,39 +38,22 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
       return;
     }
 
-    const baseName = file.name.replace(/\.pdf$/i, '');
-    setFileName(`${baseName}_LOLOPDF.zip`);
     setIsProcessing(true);
+    setProgress('Initializing...');
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
-      const pdf = await loadingTask.promise;
-      const numPages = pdf.numPages;
-      const newResults: JpgResult[] = [];
-
-      for (let i = 1; i <= numPages; i++) {
-        setProgress(`Converting page ${i} of ${numPages}...`);
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        if (context) {
-          await page.render({ canvasContext: context, viewport }).promise;
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-          const blob = await (await fetch(dataUrl)).blob();
-          newResults.push({
-            url: URL.createObjectURL(blob),
-            name: `${baseName}-page-${i}.jpg`,
-          });
-        }
-      }
-      setResults(newResults);
+      const formData = new FormData();
+      formData.append('file', file);
+      // Specify image format if API supports it, e.g., 'jpeg'
+      // formData.append('imageFormat', 'jpeg'); 
+      const { blob, filename } = await callStirlingApi('/pdf-to-images', formData, setProgress);
+      
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
+      setDownloadName(filename);
+      
     } catch (err) {
       console.error(err);
-      setError("Could not process the PDF. It might be corrupted or password-protected.");
+      setError(err instanceof Error ? err.message : "Could not process the PDF. It might be corrupted or password-protected.");
     } finally {
       setIsProcessing(false);
       setProgress('');
@@ -91,10 +62,11 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
   
   const reset = () => {
     setIsProcessing(false);
-    setResults([]);
+    if(resultUrl) URL.revokeObjectURL(resultUrl);
+    setResultUrl(null);
     setError(null);
     setProgress('');
-    setFileName('');
+    setDownloadName('');
   };
 
   return (
@@ -121,8 +93,8 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
                 <p className="text-md text-gray-300 mt-2">{progress}</p>
             </div>
             )}
-            {results.length > 0 ? (
-                <DownloadScreen files={results} zipFileName={fileName} onStartOver={reset} />
+            {resultUrl ? (
+                <DownloadScreen files={[{ url: resultUrl, name: downloadName }]} onStartOver={reset} />
             ) : <PdfUpload onFilesSelect={handleFileChange} multiple={false} />}
         </div>
     </div>

@@ -4,8 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const PDFLib: any;
+import { callStirlingApi } from '../utils';
 
 type Position = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
 
@@ -14,16 +13,17 @@ interface AddPageNumbersPageProps {
 }
 
 export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNavigate }) => {
-  const [pdfFile, setPdfFile] = useState<{ file: File; arrayBuffer: ArrayBuffer } | null>(null);
+  const [pdfFile, setPdfFile] = useState<{ file: File } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
   
   // Options
   const [position, setPosition] = useState<Position>('bottom-center');
   const [fontSize, setFontSize] = useState(12);
-  const [format, setFormat] = useState('Page {p} of {n}');
+  const [format, setFormat] = useState('{p}/{n}');
   const [margin, setMargin] = useState(36);
 
   const handleFileChange = async (files: FileList | null) => {
@@ -31,8 +31,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
     reset();
     const file = files[0];
     if (file.type !== 'application/pdf') return setError("Please select a valid PDF file.");
-    const arrayBuffer = await file.arrayBuffer();
-    setPdfFile({ file, arrayBuffer });
+    setPdfFile({ file });
   };
 
   const handleProcess = async () => {
@@ -40,56 +39,32 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
 
     setIsProcessing(true);
     setError(null);
+    setProgressMessage("Adding page numbers...");
     try {
-      const { PDFDocument, rgb, StandardFonts } = PDFLib;
-      const pdfDoc = await PDFDocument.load(pdfFile.arrayBuffer);
-      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const pages = pdfDoc.getPages();
-      const numPages = pages.length;
-
-      for (let i = 0; i < numPages; i++) {
-        const page = pages[i];
-        const { width, height } = page.getSize();
-        const pageNumText = format.replace('{p}', String(i + 1)).replace('{n}', String(numPages));
-        const textWidth = helveticaFont.widthOfTextAtSize(pageNumText, fontSize);
-        
-        let x = 0;
-        let y = 0;
-
-        switch (position) {
-          case 'top-left': x = margin; y = height - margin; break;
-          case 'top-center': x = width / 2 - textWidth / 2; y = height - margin; break;
-          case 'top-right': x = width - margin - textWidth; y = height - margin; break;
-          case 'bottom-left': x = margin; y = margin; break;
-          case 'bottom-center': x = width / 2 - textWidth / 2; y = margin; break;
-          case 'bottom-right': x = width - margin - textWidth; y = margin; break;
-        }
-
-        page.drawText(pageNumText, {
-          x,
-          y,
-          size: fontSize,
-          font: helveticaFont,
-          color: rgb(0, 0, 0),
-        });
-      }
-
-      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
-      setDownloadName(`${baseName}_numbered_LOLOPDF.pdf`);
-
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      setResultUrl(URL.createObjectURL(blob));
+      const formData = new FormData();
+      formData.append('file', pdfFile.file);
+      formData.append('position', position);
+      formData.append('font_size', String(fontSize));
+      formData.append('format', format);
+      formData.append('margin', String(margin));
+      
+      const { blob, filename } = await callStirlingApi('/add-page-numbers', formData, setProgressMessage);
+      
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
+      setDownloadName(filename);
     } catch (err) {
       console.error(err);
-      setError("Failed to add page numbers. The PDF might be corrupted or protected.");
+      setError(err instanceof Error ? err.message : "Failed to add page numbers. The PDF might be corrupted or protected.");
     } finally {
       setIsProcessing(false);
+      setProgressMessage('');
     }
   };
 
   const reset = () => {
     setPdfFile(null);
+    if(resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
     setDownloadName('');
     setError(null);
@@ -111,13 +86,13 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
                 </select>
             </div>
              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Format</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Format ({'{p}'}=page, {'{n}'}=total)</label>
                 <input
                   type="text"
                   value={format}
                   onChange={e => setFormat(e.target.value)}
                   className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  placeholder="Page {p} of {n}"
+                  placeholder="{p} / {n}"
                 />
              </div>
              <div>
@@ -159,7 +134,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
         {isProcessing && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
-                <p className="text-xl text-white mt-4">Adding Page Numbers...</p>
+                <p className="text-xl text-white mt-4">{progressMessage}</p>
             </div>
         )}
 

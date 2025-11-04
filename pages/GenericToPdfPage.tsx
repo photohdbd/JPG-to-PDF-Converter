@@ -11,42 +11,27 @@ export type AppFile = {
   id: string;
   file: File;
   type: 'image' | 'text' | 'unsupported';
-  previewUrl?: string; // For images
-  textContent?: string; // For text files
+  previewUrl?: string;
+  textContent?: string;
 };
 
-interface ConverterPageProps {
+interface GenericToPdfPageProps {
   onNavigate: (page: Page) => void;
+  pageTitle: string;
+  pageDescription: string;
+  fileUploadTitle: string;
+  acceptedMimeTypes: string;
+  fileTypeDescription: string;
 }
 
-const TEXT_MIME_TYPES = [
-    'text/plain', 'text/markdown', 'text/csv', 'text/html', 'text/css',
-    'application/javascript', 'application/json', 'application/xml', 'application/rtf'
-];
-const TEXT_EXTENSIONS = [
-    '.txt', '.md', '.csv', '.html', '.htm', '.css', '.js', '.json', '.xml', '.log', '.rtf',
-    '.c', '.cpp', '.java', '.py', '.php', '.rb', '.sh', '.tex', '.wps'
-];
-
-const getFileType = (file: File): 'image' | 'text' | 'unsupported' => {
-    if (file.type.startsWith('image/')) {
-        return 'image';
-    }
-    if (TEXT_MIME_TYPES.includes(file.type)) {
-        return 'text';
-    }
-    const fileName = file.name.toLowerCase();
-    for (const ext of TEXT_EXTENSIONS) {
-        if (fileName.endsWith(ext)) {
-            return 'text';
-        }
-    }
-    // The backend might support it, so we'll allow it but mark it visually.
-    return 'unsupported';
-};
-
-
-export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
+export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
+  onNavigate,
+  pageTitle,
+  pageDescription,
+  fileUploadTitle,
+  acceptedMimeTypes,
+  fileTypeDescription,
+}) => {
   const [appFiles, setAppFiles] = useState<AppFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -55,8 +40,9 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
   const [progressMessage, setProgressMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const acceptedTypesArray = acceptedMimeTypes.split(',').map(t => t.trim().toLowerCase());
+
   useEffect(() => {
-    // Cleanup object URLs to prevent memory leaks
     return () => {
       appFiles.forEach(appFile => {
         if (appFile.previewUrl) {
@@ -74,24 +60,51 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
 
     setError(null);
     const newFilesPromises = Array.from(files).map(file => {
-      return new Promise<AppFile>((resolve) => {
-        const fileType = getFileType(file);
-        const baseFile = {
+      return new Promise<AppFile | null>((resolve) => {
+        const fileTypeLower = file.type.toLowerCase();
+        const fileNameLower = file.name.toLowerCase();
+
+        const isAccepted = acceptedTypesArray.some(acceptedType => {
+          if (acceptedType.startsWith('.')) { // extension check
+            return fileNameLower.endsWith(acceptedType);
+          }
+          if (acceptedType.endsWith('/*')) { // wildcard mime type
+            return fileTypeLower.startsWith(acceptedType.slice(0, -1));
+          }
+          return fileTypeLower === acceptedType;
+        });
+
+        if (!isAccepted) {
+            resolve(null);
+            return;
+        }
+
+        const baseFile: AppFile = {
           id: `${file.name}-${file.lastModified}-${Math.random()}`,
           file,
+          type: 'image', // Assume image for preview purposes, backend handles it
         };
 
-        if (fileType === 'image') {
-          resolve({ ...baseFile, type: 'image', previewUrl: URL.createObjectURL(file) });
-        } else if (fileType === 'text') {
-           resolve({ ...baseFile, type: 'text' });
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+             resolve({ ...baseFile, previewUrl: e.target?.result as string });
+          };
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
         } else {
-          resolve({ ...baseFile, type: 'unsupported' });
+          // For non-image files, don't create a preview URL, show generic icon
+          resolve({ ...baseFile, type: 'text' });
         }
       });
     });
 
-    const newAppFiles = await Promise.all(newFilesPromises);
+    const newAppFiles = (await Promise.all(newFilesPromises)).filter(f => f !== null) as AppFile[];
+    const rejectedCount = files.length - newAppFiles.length;
+
+    if (rejectedCount > 0) {
+      setError(`${rejectedCount} file(s) were of the wrong type and have been ignored.`);
+    }
     
     if (newAppFiles.length > 0) {
       setAppFiles(prev => [...prev, ...newAppFiles]);
@@ -101,7 +114,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
   const handleConvertToPdf = useCallback(async () => {
     const filesToConvert = appFiles;
     if (filesToConvert.length === 0) {
-      setError("Please select at least one file.");
+      setError(`Please select at least one file to convert.`);
       return;
     }
 
@@ -116,7 +129,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
       });
 
       const { blob, filename } = await callStirlingApi('/convert-to-pdf', formData, setProgressMessage);
-      
+
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
       setDownloadName(filename);
@@ -137,17 +150,16 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
 
   const reset = () => {
     setAppFiles([]);
-    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    if(pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
     setDownloadName('');
     setError(null);
     setIsConverting(false);
-    setProgressMessage('');
   };
 
   const renderContent = () => {
     if (pdfUrl) {
-      return <DownloadScreen files={[{ url: pdfUrl, name: downloadName }]} onStartOver={reset} autoDownload={true} />;
+      return <DownloadScreen files={[{url: pdfUrl, name: downloadName}]} onStartOver={reset} autoDownload={true} />;
     }
 
     if (appFiles.length > 0) {
@@ -163,26 +175,37 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
       );
     }
 
-    return <FileUpload onFilesSelect={handleFilesChange} />;
+    return (
+      <FileUpload 
+        onFilesSelect={handleFilesChange}
+        title={fileUploadTitle}
+        accept={acceptedMimeTypes}
+        description={fileTypeDescription}
+      />
+    );
   };
 
   return (
     <div className="w-full max-w-4xl flex flex-col">
         <BackButton onClick={() => onNavigate('home')} />
         <div className="w-full flex flex-col items-center justify-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">{pageTitle}</h1>
+            <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">
+                {pageDescription}
+            </p>
             {error && (
             <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3" />
                 <span className="block sm:inline">{error}</span>
-                <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
-                <span className="text-xl">×</span>
+                <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3" aria-label="Close error message">
+                <span className="text-xl" aria-hidden="true">&times;</span>
                 </button>
             </div>
             )}
             {isConverting && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
-                <p className="text-xl text-white mt-4">Converting to PDF...</p>
+                <p className="text-xl text-white mt-4">Converting files to PDF...</p>
                 <p className="text-md text-gray-300 mt-2">{progressMessage}</p>
             </div>
             )}
@@ -191,7 +214,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
                 type="file"
                 ref={fileInputRef}
                 onChange={(e) => handleFilesChange(e.target.files)}
-                accept="image/*,.txt,.md,.csv,.json,.xml,.html,.css,.js,.log,.rtf,.c,.cpp,.java,.py,.php,.rb,.sh,.tex"
+                accept={acceptedMimeTypes}
                 multiple
                 className="hidden"
             />

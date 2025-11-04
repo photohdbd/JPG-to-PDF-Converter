@@ -5,16 +5,13 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon, ArrowRightIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const pdfjsLib: any;
-declare const jspdf: any;
+import { callStirlingApi } from '../utils';
 
 type PdfFileState = {
   file: File;
-  arrayBuffer: ArrayBuffer;
 };
 
-export type CompressionLevel = 'recommended' | 'high' | 'extreme' | 'custom';
+export type CompressionLevel = 'recommended' | 'high' | 'extreme';
 
 type ResultState = {
   url: string;
@@ -39,17 +36,10 @@ const formatBytes = (bytes: number, decimals = 2): string => {
 export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) => {
   const [pdfFile, setPdfFile] = useState<PdfFileState | null>(null);
   const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('recommended');
-  const [customQuality, setCustomQuality] = useState(75);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState('');
   const [result, setResult] = useState<ResultState | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
-    }
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -75,13 +65,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
       setError("The selected file is not a PDF. Please choose a valid PDF file.");
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPdfFile({ file, arrayBuffer: e.target?.result as ArrayBuffer });
-    };
-    reader.onerror = () => setError("Failed to read the file.");
-    reader.readAsArrayBuffer(file);
+    setPdfFile({ file });
   };
 
   const handleCompressPdf = async () => {
@@ -92,84 +76,47 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
     setProcessingProgress('Initializing...');
 
     try {
-      const { jsPDF } = jspdf;
-      const getQuality = (): number => {
+      const getApiLevel = (): string => {
         switch (compressionLevel) {
-          case 'recommended': return 0.75;
-          case 'high': return 0.50;
-          case 'extreme': return 0.25;
-          case 'custom': return customQuality / 100;
-          default: return 0.75;
+          case 'recommended': return '3'; // Moderate
+          case 'high': return '2'; // High
+          case 'extreme': return '1'; // Highest
+          default: return '3';
         }
       };
-      const quality = getQuality();
 
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfFile.arrayBuffer) });
-      const pdf = await loadingTask.promise;
-      const numPages = pdf.numPages;
+      const formData = new FormData();
+      formData.append('file', pdfFile.file);
+      formData.append('compressionLevel', getApiLevel());
 
-      let doc: any | null = null;
+      const { blob, filename } = await callStirlingApi('/compress', formData, setProcessingProgress);
 
-      for (let i = 1; i <= numPages; i++) {
-        setProcessingProgress(`Processing page ${i} of ${numPages}...`);
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 });
-
-        if (!doc) {
-            doc = new jsPDF({
-                orientation: viewport.width > viewport.height ? 'landscape' : 'portrait',
-                unit: 'pt',
-                format: [viewport.width, viewport.height]
-            });
-        } else {
-            doc.addPage([viewport.width, viewport.height], viewport.width > viewport.height ? 'landscape' : 'portrait');
-        }
-
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        if (context) {
-            await page.render({ canvasContext: context, viewport }).promise;
-            const dataUrl = canvas.toDataURL('image/jpeg', quality);
-            doc.addImage(dataUrl, 'JPEG', 0, 0, viewport.width, viewport.height);
-        }
-      }
-
-      if (doc) {
-        const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
-        const downloadName = `${baseName}_compressed_LOLOPDF.pdf`;
-        const pdfBlob = doc.output('blob');
-        const url = URL.createObjectURL(pdfBlob);
-        setResult({
-          url,
-          name: downloadName,
-          originalSize: pdfFile.file.size,
-          newSize: pdfBlob.size,
-        });
-      } else {
-        throw new Error("Failed to create compressed PDF document.");
-      }
+      const url = URL.createObjectURL(blob);
+      setResult({
+        url,
+        name: filename,
+        originalSize: pdfFile.file.size,
+        newSize: blob.size,
+      });
 
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? `Compression failed: ${err.message}. The PDF might be corrupted or password-protected.` : "An unknown error occurred during compression.");
+      setError(err instanceof Error ? `Compression failed: ${err.message}` : "An unknown error occurred during compression.");
     } finally {
       setIsProcessing(false);
       setProcessingProgress('');
-      setPdfFile(null); // Clear file after processing
+      setPdfFile(null);
     }
   };
 
   const reset = () => {
     setPdfFile(null);
+    if(result?.url) URL.revokeObjectURL(result.url);
     setResult(null);
     setError(null);
     setIsProcessing(false);
     setProcessingProgress('');
     setCompressionLevel('recommended');
-    setCustomQuality(75);
   };
 
   const renderContent = () => {
@@ -193,8 +140,6 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
             fileSize={formatBytes(pdfFile.file.size)}
             level={compressionLevel}
             setLevel={setCompressionLevel}
-            customQuality={customQuality}
-            setCustomQuality={setCustomQuality}
           />
           <div className="mt-8 flex justify-center">
             <button

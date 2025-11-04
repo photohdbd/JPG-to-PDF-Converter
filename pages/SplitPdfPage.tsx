@@ -5,8 +5,8 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { callStirlingApi } from '../utils';
 
-declare const PDFLib: any;
 declare const pdfjsLib: any;
 
 type PdfFileState = {
@@ -32,6 +32,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
   const [splitPdfUrl, setSplitPdfUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -129,49 +130,69 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
      setPages(prevPages => prevPages.map(page => ({ ...page, selected: false })));
   };
 
+  const toRangeString = (numbers: number[]): string => {
+      if (numbers.length === 0) return '';
+      numbers.sort((a,b) => a - b);
+      const ranges = [];
+      let start = numbers[0];
+      let end = numbers[0];
+      for (let i = 1; i < numbers.length; i++) {
+          if (numbers[i] === end + 1) {
+              end = numbers[i];
+          } else {
+              ranges.push(start === end ? `${start}` : `${start}-${end}`);
+              start = end = numbers[i];
+          }
+      }
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      return ranges.join(',');
+  }
+
   const handleSplitPdf = async () => {
     if (!pdfFile) return;
 
-    const pagesToKeepIndices = pages
+    const pagesToKeep = pages
       .filter(p => !p.selected)
-      .map(p => p.pageNum - 1);
+      .map(p => p.pageNum);
 
-    if (pagesToKeepIndices.length === pages.length) {
+    if (pagesToKeep.length === pages.length) {
       setError("Please select at least one page to remove.");
       return;
     }
-    if (pagesToKeepIndices.length === 0) {
+    if (pagesToKeep.length === 0) {
       setError("You cannot remove all pages from the document.");
       return;
     }
 
     setIsSplitting(true);
     setError(null);
-    try {
-      const { PDFDocument } = PDFLib;
-      const originalPdfDoc = await PDFDocument.load(pdfFile.arrayBuffer);
-      const newPdfDoc = await PDFDocument.create();
-      const copiedPages = await newPdfDoc.copyPages(originalPdfDoc, pagesToKeepIndices);
-      copiedPages.forEach(page => newPdfDoc.addPage(page));
-      
-      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
-      setDownloadName(`${baseName}_split_LOLOPDF.pdf`);
+    setProgressMessage('Initializing...');
 
-      const pdfBytes = await newPdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    try {
+      const formData = new FormData();
+      formData.append('file', pdfFile.file);
+      formData.append('range', toRangeString(pagesToKeep));
+      
+      const { blob, filename } = await callStirlingApi('/split/range', formData, setProgressMessage);
+
       const url = URL.createObjectURL(blob);
       setSplitPdfUrl(url);
+      setDownloadName(filename);
+
     } catch (err) {
       console.error(err);
-      setError("An error occurred while creating the new PDF.");
+      setError(err instanceof Error ? err.message : "An error occurred while creating the new PDF.");
     } finally {
       setIsSplitting(false);
+      setProgressMessage('');
     }
   };
 
   const reset = () => {
     setPdfFile(null);
+    pages.forEach(p => URL.revokeObjectURL(p.dataUrl));
     setPages([]);
+    if(splitPdfUrl) URL.revokeObjectURL(splitPdfUrl);
     setSplitPdfUrl(null);
     setDownloadName('');
     setError(null);
@@ -196,7 +217,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
         />
       );
     }
-    return <PdfUpload onFilesSelect={handleFileChange} />;
+    return <PdfUpload onFilesSelect={handleFileChange} multiple={false} />;
   };
 
   return (
@@ -220,8 +241,9 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
                 <LoaderIcon />
                 <p className="text-xl text-white mt-4">
-                {isProcessing ? "Rendering PDF pages..." : "Creating your new PDF..."}
+                  {isProcessing ? "Rendering PDF pages..." : "Creating your new PDF..."}
                 </p>
+                {isSplitting && <p className="text-md text-gray-300 mt-2">{progressMessage}</p>}
             </div>
             )}
             {renderContent()}

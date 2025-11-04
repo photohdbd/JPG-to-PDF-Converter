@@ -4,8 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-
-declare const pdfjsLib: any;
+import { callStirlingApi } from '../utils';
 
 interface PdfToExcelPageProps {
   onNavigate: (page: Page) => void;
@@ -16,13 +15,8 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
+  const [progressMessage, setProgressMessage] = useState('');
 
-  useEffect(() => {
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
-    }
-  }, []);
-  
   useEffect(() => {
       return () => {
           if (resultUrl) URL.revokeObjectURL(resultUrl);
@@ -39,58 +33,28 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
       setError("The selected file is not a PDF. Please choose a valid PDF file.");
       return;
     }
-    setFileName(file.name.replace(/\.pdf$/i, '_LOLOPDF.csv'));
+
     setIsProcessing(true);
-
+    setProgressMessage('Extracting data...');
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
-      const pdf = await loadingTask.promise;
-      const numPages = pdf.numPages;
-      let csvContent = '';
-
-      for (let i = 1; i <= numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        
-        // Simple coordinate-based text to CSV conversion
-        const lines: { y: number; items: { x: number; str: string }[] }[] = [];
-        const Y_TOLERANCE = 5;
-
-        textContent.items.forEach((item: any) => {
-          const y = item.transform[5];
-          const x = item.transform[4];
-          let line = lines.find(l => Math.abs(l.y - y) < Y_TOLERANCE);
-          if (!line) {
-            line = { y, items: [] };
-            lines.push(line);
-          }
-          line.items.push({ x, str: item.str });
-        });
-
-        lines.sort((a, b) => b.y - a.y); // Sort lines from top to bottom
-        
-        lines.forEach(line => {
-          line.items.sort((a, b) => a.x - b.x); // Sort items in line from left to right
-          const lineText = line.items.map(item => `"${item.str.replace(/"/g, '""')}"`).join(',');
-          csvContent += lineText + '\n';
-        });
-        csvContent += '\n'; // Add a blank line between pages
-      }
+      const formData = new FormData();
+      formData.append('file', file);
+      const { blob, filename } = await callStirlingApi('/pdf-to-excel', formData, setProgressMessage);
       
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       setResultUrl(URL.createObjectURL(blob));
-
+      setFileName(filename);
     } catch (err) {
       console.error(err);
-      setError("Could not process the PDF. It might be corrupted or password-protected.");
+      setError(err instanceof Error ? err.message : "Could not process the PDF. It might be corrupted or password-protected.");
     } finally {
       setIsProcessing(false);
+      setProgressMessage('');
     }
   };
   
   const reset = () => {
     setIsProcessing(false);
+    if(resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
     setError(null);
     setFileName('');
@@ -119,8 +83,8 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
             )}
             {isProcessing && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
-                <LoaderIcon className="w-16 h-16 animate-spin text-brand-primary" />
-                <p className="text-xl text-white mt-4">Extracting data to CSV...</p>
+                <LoaderIcon />
+                <p className="text-xl text-white mt-4">{progressMessage}</p>
             </div>
             )}
             
