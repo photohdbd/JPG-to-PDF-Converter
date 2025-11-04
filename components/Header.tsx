@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../firebase';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { MoonIcon, SunIcon, XIcon } from './Icons';
+import { Logo } from './Logo';
 
 interface HeaderProps {
     onNavigate: (page: Page) => void;
@@ -49,11 +50,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, theme, toggleTheme }
     <>
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20 shadow-lg">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('home')}>
-            <img src="/favicon.svg" alt="LOLOPDF Logo" className="w-10 h-10" />
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary text-transparent bg-clip-text">
-              LOLOPDF
-            </h1>
+          <div className="flex items-center cursor-pointer" onClick={() => onNavigate('home')}>
+            <Logo className="h-10 w-auto" />
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
               <button onClick={() => onNavigate('home')} className="hover:text-black dark:hover:text-white transition-colors">Home</button>
