@@ -107,3 +107,65 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
             </div>
              <div>
                 <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Format</label>
+                <input
+                  type="text"
+                  value={format}
+                  onChange={e => setFormat(e.target.value)}
+                  className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  placeholder="Page {p} of {n}"
+                />
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Font Size ({fontSize}pt)</label>
+                <input
+                    type="range" min="8" max="72" step="1" value={fontSize}
+                    onChange={e => setFontSize(parseInt(e.target.value))}
+                    className="w-full accent-brand-secondary"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Margin ({margin}pt)</label>
+                <input
+                    type="range" min="10" max="100" step="1" value={margin}
+                    onChange={e => setMargin(parseInt(e.target.value))}
+                    className="w-full accent-brand-secondary"
+                />
+            </div>
+        </div>
+        <button onClick={handleProcess} className="w-full bg-brand-primary text-white font-bold py-3 mt-6 rounded-lg hover:bg-brand-secondary">
+          Add Page Numbers
+        </button>
+    </div>
+  );
+
+  return (
+    <div className="w-full max-w-4xl flex flex-col">
+      <BackButton onClick={() => onNavigate('home')} />
+      <div className="w-full flex flex-col items-center justify-center">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Add Page Numbers to PDF</h1>
+        <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">Easily insert page numbers into your PDF with custom positioning and formatting.</p>
+        {error && (
+            <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
+                <AlertTriangleIcon className="w-5 h-5 mr-3" />
+                <span className="block sm:inline">{error}</span>
+                <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3"><span className="text-xl">×</span></button>
+            </div>
+        )}
+        {isProcessing && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50">
+                <LoaderIcon />
+                <p className="text-xl text-white mt-4">Adding Page Numbers...</p>
+            </div>
+        )}
+
+        {resultUrl ? (
+            <DownloadScreen files={[{url: resultUrl, name: "numbered.pdf"}]} onStartOver={reset} />
+        ) : !pdfFile ? (
+            <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
+        ) : (
+             renderOptions()
+        )}
+      </div>
+    </div>
+  );
+};
