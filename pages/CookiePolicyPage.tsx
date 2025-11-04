@@ -28,7 +28,7 @@ export const CookiePolicyPage: React.FC<PolicyPageProps> = ({ onNavigate }) => {
 
       <PolicySection title="2. How We Use Cookies">
         <p>
-          AI PDF Toolkit uses cookies for the following purposes:
+          LOLOPDF uses cookies for the following purposes:
         </p>
         <ul className="list-disc list-inside space-y-2">
           <li>

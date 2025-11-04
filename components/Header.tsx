@@ -49,9 +49,9 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, theme, toggleTheme }
   return (
     <>
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20 shadow-lg">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center cursor-pointer" onClick={() => onNavigate('home')}>
-            <Logo className="h-10 w-auto" />
+            <Logo className="h-12 w-auto" />
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
               <button onClick={() => onNavigate('home')} className="hover:text-black dark:hover:text-white transition-colors">Home</button>

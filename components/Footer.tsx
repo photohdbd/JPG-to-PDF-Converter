@@ -46,6 +46,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
         <div className="mt-8 pt-8 border-t border-gray-300 dark:border-gray-800 text-center text-xs text-gray-500">
             <p>&copy; {new Date().getFullYear()} LOLOPDF. All rights reserved.</p>
+            <p className="mt-2">Developer & Design By Minhazur Rahman</p>
         </div>
       </div>
     </footer>

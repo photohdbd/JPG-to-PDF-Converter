@@ -92,7 +92,7 @@ const App: React.FC = () => {
 
   const navigate = (page: Page, state: any = null) => {
     if (page === 'github') {
-        window.open('https://github.com/example/ai-pdf-toolkit', '_blank');
+        window.open('https://github.com/example/lolopdf-toolkit', '_blank');
         return;
     }
     setCurrentPage(page);

@@ -22,7 +22,7 @@ export const PrivacyPolicyPage: React.FC<PolicyPageProps> = ({ onNavigate }) => 
 
       <PolicySection title="1. Introduction">
         <p>
-          Welcome to AI PDF Toolkit ("we", "our", "us"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services (collectively, the "Service").
+          Welcome to LOLOPDF ("we", "our", "us"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services (collectively, the "Service").
         </p>
       </PolicySection>
 

@@ -22,13 +22,13 @@ export const TermsOfServicePage: React.FC<PolicyPageProps> = ({ onNavigate }) =>
 
       <PolicySection title="1. Acceptance of Terms">
         <p>
-          By accessing or using the AI PDF Toolkit website and services ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to all of these Terms, do not use our Service.
+          By accessing or using the LOLOPDF website and services ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to all of these Terms, do not use our Service.
         </p>
       </PolicySection>
 
       <PolicySection title="2. Description of Service">
         <p>
-          AI PDF Toolkit provides a suite of online tools for converting, merging, splitting, compressing, and otherwise manipulating PDF files. Some features may be enhanced by artificial intelligence. The Service is provided "as is" and we reserve the right to modify or discontinue it at any time without notice.
+          LOLOPDF provides a suite of online tools for converting, merging, splitting, compressing, and otherwise manipulating PDF files. Some features may be enhanced by artificial intelligence. The Service is provided "as is" and we reserve the right to modify or discontinue it at any time without notice.
         </p>
       </PolicySection>
 
@@ -49,13 +49,13 @@ export const TermsOfServicePage: React.FC<PolicyPageProps> = ({ onNavigate }) =>
 
       <PolicySection title="4. Disclaimer of Warranties">
         <p>
-          The Service is provided on an "as is" and "as available" basis. AI PDF Toolkit expressly disclaims all warranties of any kind, whether express or implied, including, but not limited to, the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. We make no warranty that the Service will meet your requirements, be uninterrupted, timely, secure, or error-free.
+          The Service is provided on an "as is" and "as available" basis. LOLOPDF expressly disclaims all warranties of any kind, whether express or implied, including, but not limited to, the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. We make no warranty that the Service will meet your requirements, be uninterrupted, timely, secure, or error-free.
         </p>
       </PolicySection>
       
       <PolicySection title="5. Limitation of Liability">
         <p>
-          You expressly understand and agree that AI PDF Toolkit shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses (even if we have been advised of the possibility of such damages), resulting from the use or the inability to use the Service.
+          You expressly understand and agree that LOLOPDF shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses (even if we have been advised of the possibility of such damages), resulting from the use or the inability to use the Service.
         </p>
       </PolicySection>
 
