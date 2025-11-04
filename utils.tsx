@@ -1,20 +1,26 @@
 
-export const STIRLING_API_PREFIX = '/api/v1/general';
+
+const STIRLING_API_BASE_PATH = '/api/api/v1';
 
 export const callStirlingApi = async (
   endpoint: string,
   formData: FormData,
   onProgress?: (message: string) => void
 ): Promise<{ blob: Blob; filename: string }> => {
+  const url = `${STIRLING_API_BASE_PATH}${endpoint}`;
   try {
     onProgress?.('Uploading file(s)...');
-    const response = await fetch(`${STIRLING_API_PREFIX}${endpoint}`, {
+    const response = await fetch(url, {
       method: 'POST',
       body: formData,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
+      // Check if the error is HTML, which indicates a server/proxy error rather than a specific API error message.
+      if (errorText && errorText.trim().toLowerCase().startsWith('<!doctype html')) {
+          throw new Error('A server error occurred. The API endpoint could not be reached (404 Not Found). This is likely a deployment configuration issue.');
+      }
       throw new Error(errorText || `API request failed: ${response.statusText} (${response.status})`);
     }
 
@@ -33,7 +39,7 @@ export const callStirlingApi = async (
     return { blob, filename };
 
   } catch (error) {
-    console.error(`API call to ${endpoint} failed:`, error);
+    console.error(`API call to ${url} failed:`, error);
     if (error instanceof Error) {
       throw new Error(`Processing failed: ${error.message}`);
     }

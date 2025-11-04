@@ -70,7 +70,9 @@ export const CheckCircleIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
-export const LoaderIcon: React.FC<IconProps> = (props) => (
+// FIX: Changed props type from IconProps to React.HTMLAttributes<HTMLDivElement>
+// because this component renders a div, not an SVG.
+export const LoaderIcon: React.FC<React.HTMLAttributes<HTMLDivElement>> = (props) => (
   <div {...props} className="flex space-x-2">
     <style>{`
       @keyframes pulse {
