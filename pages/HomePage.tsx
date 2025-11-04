@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Page } from '../App';
 import { ToolCard } from '../components/ToolCard';
 import {
@@ -195,6 +195,14 @@ const toolCategories: { title: string; tools: Tool[] }[] = [
 ];
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
+  const [selectedCategory, setSelectedCategory] = useState('All Tools');
+
+  const categories = ['All Tools', ...toolCategories.map(c => c.title)];
+
+  const filteredTools = selectedCategory === 'All Tools'
+    ? toolCategories.flatMap(category => category.tools)
+    : toolCategories.find(category => category.title === selectedCategory)?.tools || [];
+
   return (
     <div className="w-full text-center">
       <img src="/favicon.svg" alt="LOLOPDF Logo" className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-6" />
@@ -205,20 +213,34 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         Your one-stop solution for converting, merging, editing, and enhancing PDF files.
       </p>
 
-      {toolCategories.map((category) => (
-        <div key={category.title} className="mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 text-left">{category.title}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {category.tools.map((tool) => (
-              <ToolCard
-                key={tool.title}
-                {...tool}
-                onClick={tool.page ? () => onNavigate(tool.page) : undefined}
-              />
-            ))}
-          </div>
+      <div className="flex flex-wrap justify-center gap-3 mb-10">
+        {categories.map((category) => (
+          <button
+            key={category}
+            onClick={() => setSelectedCategory(category)}
+            className={`px-5 py-2 text-sm font-semibold rounded-full transition-all duration-300 ${
+              selectedCategory === category
+                ? 'bg-brand-primary text-white shadow-lg'
+                : 'bg-gray-200 dark:bg-gray-800 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700'
+            }`}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
+      <div>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 text-left">{selectedCategory}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredTools.map((tool) => (
+            <ToolCard
+              key={tool.title}
+              {...tool}
+              onClick={tool.page ? () => onNavigate(tool.page) : undefined}
+            />
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 };
