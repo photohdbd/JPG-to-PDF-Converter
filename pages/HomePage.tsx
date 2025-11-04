@@ -205,18 +205,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         Your one-stop solution for converting, merging, editing, and enhancing PDF files.
       </p>
 
-       <div className="my-16 max-w-4xl mx-auto text-left px-4">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">The Ultimate Online PDF Toolkit</h2>
-          <div className="space-y-4 text-gray-600 dark:text-gray-400 leading-relaxed">
-            <p>
-              LOLOPDF is your comprehensive suite of free online PDF tools designed to make your document management tasks simpler and more efficient. Whether you need to convert a JPG image to a PDF, merge multiple PDF documents into a single file, or securely sign a contract, our toolkit has you covered. All our tools are designed to be fast, easy to use, and secure. We process your files in your browser whenever possible and automatically delete them from our servers within hours, ensuring your data remains private.
-            </p>
-            <p>
-              Our powerful converters can handle a wide variety of formats. Easily convert Word, PowerPoint, and Excel files to PDF while preserving the original formatting. Need to go the other way? Convert PDFs back into JPG images, text-based Word documents, or extract tabular data into CSV for Excel. With tools to compress, split, rotate, and add watermarks, LOLOPDF is the only PDF software you'll ever need.
-            </p>
-          </div>
-        </div>
-
       {toolCategories.map((category) => (
         <div key={category.title} className="mb-12">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 text-left">{category.title}</h2>

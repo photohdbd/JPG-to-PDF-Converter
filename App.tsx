@@ -32,6 +32,7 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { useAuth } from './contexts/AuthContext';
 import { EditPdfPage } from './pages/EditPdfPage';
 import { AddPagesToPdfPage } from './pages/AddPagesToPdfPage';
+import { AboutUsPage } from './pages/AboutUsPage';
 
 export type Page =
   | 'home'
@@ -55,7 +56,6 @@ export type Page =
   | 'pdf-to-powerpoint'
   | 'edit-pdf'
   | 'add-pages-to-pdf'
-  | 'all-tools'
   | 'pricing'
   | 'contact'
   | 'login'
@@ -144,9 +144,8 @@ const App: React.FC = () => {
       case 'checkout': return <CheckoutPage onNavigate={navigate} {...pageState} />;
 
       // Static/info pages
-      case 'all-tools': return <HomePage onNavigate={navigate} />;
       case 'contact': return <PlaceholderPage title="Contact Us" />;
-      case 'about': return <PlaceholderPage title="About Us" />;
+      case 'about': return <AboutUsPage onNavigate={navigate} />;
       case 'terms': return <TermsOfServicePage onNavigate={navigate} />;
       case 'privacy': return <PrivacyPolicyPage onNavigate={navigate} />;
       case 'cookies': return <CookiePolicyPage onNavigate={navigate} />;

@@ -57,7 +57,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, theme, toggleTheme }
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
               <button onClick={() => onNavigate('home')} className="hover:text-black dark:hover:text-white transition-colors">Home</button>
-              <button onClick={() => onNavigate('all-tools')} className="hover:text-black dark:hover:text-white transition-colors">All Tools</button>
               <button onClick={() => onNavigate('pricing')} className="hover:text-black dark:hover:text-white transition-colors">Pricing</button>
               {currentUser && <button onClick={() => onNavigate('dashboard')} className="hover:text-black dark:hover:text-white transition-colors">Dashboard</button>}
               <button onClick={() => onNavigate('contact')} className="hover:text-black dark:hover:text-white transition-colors">Contact</button>
@@ -95,7 +94,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, theme, toggleTheme }
               </button>
               <nav className="flex flex-col items-center gap-8 text-2xl font-medium text-gray-300">
                   <button onClick={() => handleMobileNav('home')} className="hover:text-white transition-colors">Home</button>
-                  <button onClick={() => handleMobileNav('all-tools')} className="hover:text-white transition-colors">All Tools</button>
                   <button onClick={() => handleMobileNav('pricing')} className="hover:text-white transition-colors">Pricing</button>
                   {currentUser && <button onClick={() => handleMobileNav('dashboard')} className="hover:text-white transition-colors">Dashboard</button>}
                   <button onClick={() => handleMobileNav('contact')} className="hover:text-white transition-colors">Contact</button>
