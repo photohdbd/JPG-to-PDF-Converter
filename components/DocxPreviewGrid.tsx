@@ -24,16 +24,21 @@ const PreviewCard: React.FC<{
             className={`relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 transition-colors ${isUnsupported ? 'border-yellow-700/80' : 'border-transparent'}`}
             title={isUnsupported ? "Unsupported .doc file. Please re-save as .docx to convert." : docxFile.file.name}
         >
-            <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-700 p-2 relative">
-                {isUnsupported && (
-                    <div className="absolute top-2 right-2 p-1 bg-yellow-500/20 rounded-full">
-                        <AlertTriangleIcon className="w-4 h-4 text-yellow-400" />
-                    </div>
+            <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-700 p-2 relative text-center">
+                {isUnsupported ? (
+                    <>
+                        <AlertTriangleIcon className="w-8 h-8 text-yellow-400 mb-2" />
+                        <span className="text-xs font-semibold text-yellow-300">.doc format not supported</span>
+                        <span className="text-[10px] text-yellow-400/80 mt-1">Please re-save as .docx</span>
+                    </>
+                ) : (
+                    <>
+                        <WordIcon className="w-12 h-12 text-blue-400" />
+                        <span className="text-xs mt-2 uppercase text-gray-400">
+                            {docxFile.file.name.split('.').pop()}
+                        </span>
+                    </>
                 )}
-                <WordIcon className={`w-12 h-12 ${isUnsupported ? 'text-gray-500' : 'text-blue-400'}`} />
-                <span className={`text-xs mt-2 uppercase ${isUnsupported ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {docxFile.file.name.split('.').pop()}
-                </span>
             </div>
 
             <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

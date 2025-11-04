@@ -15,6 +15,7 @@ interface ExcelToPdfPageProps {
 export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) => {
   const [isConverting, setIsConverting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
 
@@ -28,18 +29,25 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
         setError("Please select only one file. The first file has been chosen.");
     }
     
-    const validExtensions = ['.xlsx'];
-    const validMimeTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
     const fileName = file.name.toLowerCase();
-    const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+    const isXlsx = fileName.endsWith('.xlsx') || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const isXls = fileName.endsWith('.xls') || file.type === 'application/vnd.ms-excel';
 
-    if (!validMimeTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+    if (isXls) {
+      setError("Unsupported .xls format. Please re-save your spreadsheet as a modern .xlsx file and try again.");
+      return;
+    }
+
+    if (!isXlsx) {
       setError("Invalid file type. Please upload a .xlsx file.");
       return;
     }
 
     setIsConverting(true);
     setError(null);
+
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    setDownloadName(`${baseName}_LOLOPDF.pdf`);
 
     try {
       const { jsPDF } = jspdf;
@@ -101,6 +109,7 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
   const reset = () => {
     setIsConverting(false);
     setPdfUrl(null);
+    setDownloadName('');
     setError(null);
     setProgress('');
   };
@@ -131,13 +140,13 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
             )}
 
             {pdfUrl ? (
-                <DownloadScreen files={[{url: pdfUrl, name: "spreadsheet.pdf"}]} onStartOver={reset} />
+                <DownloadScreen files={[{url: pdfUrl, name: downloadName}]} onStartOver={reset} />
             ) : (
                 <FileUpload 
                     onFilesSelect={handleFileChange}
                     title="Drag & Drop Your Excel File Here"
                     accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    description="Supports .xlsx files"
+                    description="Supports .xlsx files. Classic .xls format is not supported."
                 />
             )}
         </div>

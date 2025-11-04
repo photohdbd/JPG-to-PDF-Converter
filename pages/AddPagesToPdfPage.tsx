@@ -33,6 +33,7 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +59,7 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
     setProcessingMessage('');
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
+    setDownloadName('');
     setError(null);
   };
   
@@ -171,7 +173,7 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
 };
 
   const handleSave = async () => {
-    if (!pages.length) return;
+    if (!pages.length || !initialPdf) return;
     setIsProcessing(true);
     setProcessingMessage('Assembling new PDF...');
     try {
@@ -210,6 +212,9 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
             }
         }
 
+        const baseName = initialPdf.file.name.replace(/\.[^/.]+$/, "");
+        setDownloadName(`${baseName}_combined_LOLOPDF.pdf`);
+        
         const pdfBytes = await finalPdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         setResultUrl(URL.createObjectURL(blob));
@@ -287,7 +292,7 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
         {error && <div className="bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 p-3 rounded mb-4 w-full flex items-center"><AlertTriangleIcon className="w-5 h-5 mr-2" />{error}<button onClick={() => setError(null)} className="ml-auto font-bold">X</button></div>}
         {isProcessing && <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50"><LoaderIcon /><p className="text-xl text-white mt-4">{processingMessage}</p></div>}
         
-        {resultUrl ? <DownloadScreen files={[{ url: resultUrl, name: 'combined.pdf' }]} onStartOver={reset} />
+        {resultUrl ? <DownloadScreen files={[{ url: resultUrl, name: downloadName }]} onStartOver={reset} />
         : !initialPdf ? <PdfUpload onFilesSelect={handleInitialFileChange} multiple={false} />
         : renderEditor()}
 

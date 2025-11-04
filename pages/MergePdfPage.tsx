@@ -22,6 +22,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
   const [pdfFiles, setPdfFiles] = useState<PdfFile[]>([]);
   const [isMerging, setIsMerging] = useState(false);
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,6 +88,9 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
         copiedPages.forEach((page) => mergedPdf.addPage(page));
       }
       
+      const baseName = pdfFiles[0].file.name.replace(/\.[^/.]+$/, "");
+      setDownloadName(`${baseName}_merged_LOLOPDF.pdf`);
+
       const mergedPdfBytes = await mergedPdf.save();
       const pdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(pdfBlob);
@@ -110,13 +114,14 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
   const reset = () => {
     setPdfFiles([]);
     setMergedPdfUrl(null);
+    setDownloadName('');
     setError(null);
     setIsMerging(false);
   };
 
   const renderContent = () => {
     if (mergedPdfUrl) {
-      return <DownloadScreen files={[{url: mergedPdfUrl, name: "merged.pdf"}]} onStartOver={reset} autoDownload={true} />;
+      return <DownloadScreen files={[{url: mergedPdfUrl, name: downloadName}]} onStartOver={reset} autoDownload={true} />;
     }
 
     if (pdfFiles.length > 0) {

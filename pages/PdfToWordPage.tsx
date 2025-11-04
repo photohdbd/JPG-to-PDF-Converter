@@ -39,7 +39,7 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
       setError("The selected file is not a PDF. Please choose a valid PDF file.");
       return;
     }
-    setFileName(file.name.replace(/\.pdf$/i, '.doc'));
+    setFileName(file.name.replace(/\.pdf$/i, '_LOLOPDF.doc'));
     setIsProcessing(true);
 
     try {
@@ -103,7 +103,7 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
             )}
             
             {resultUrl ? (
-                <DownloadScreen pdfUrl={resultUrl} onStartOver={reset} fileName={fileName} autoDownload={true}/>
+                <DownloadScreen files={[{ url: resultUrl, name: fileName }]} onStartOver={reset} autoDownload={true}/>
             ) : (
                 <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
             )}

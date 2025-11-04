@@ -17,6 +17,7 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = async (files: FileList | null) => {
@@ -44,6 +45,9 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
         userPassword: password,
       };
       
+      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+      setDownloadName(`${baseName}_protected_LOLOPDF.pdf`);
+      
       const pdfBytes = await pdfDoc.save({ ...options });
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       setResultUrl(URL.createObjectURL(blob));
@@ -59,6 +63,7 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
     setPassword('');
     setConfirmPassword('');
     setResultUrl(null);
+    setDownloadName('');
     setError(null);
   };
   
@@ -104,7 +109,7 @@ export const ProtectPdfPage: React.FC<ProtectPdfPageProps> = ({ onNavigate }) =>
         )}
 
         {resultUrl ? (
-            <DownloadScreen files={[{url: resultUrl, name: "protected.pdf"}]} onStartOver={reset} />
+            <DownloadScreen files={[{url: resultUrl, name: downloadName}]} onStartOver={reset} />
         ) : !pdfFile ? (
             <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
         ) : (

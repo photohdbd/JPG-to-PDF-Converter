@@ -50,6 +50,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
   const [appFiles, setAppFiles] = useState<AppFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,6 +124,10 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
       const { jsPDF } = jspdf;
       const doc = new jsPDF();
       
+      const baseName = filesToConvert[0].file.name.replace(/\.[^/.]+$/, "");
+      const finalName = filesToConvert.length > 1 ? `${baseName}_and_more` : baseName;
+      setDownloadName(`${finalName}_LOLOPDF.pdf`);
+      
       for (let i = 0; i < filesToConvert.length; i++) {
         const appFile = filesToConvert[i];
         if (i > 0) {
@@ -190,13 +195,14 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
   const reset = () => {
     setAppFiles([]);
     setPdfUrl(null);
+    setDownloadName('');
     setError(null);
     setIsConverting(false);
   };
 
   const renderContent = () => {
     if (pdfUrl) {
-      return <DownloadScreen files={[{ url: pdfUrl, name: 'converted-files.pdf' }]} onStartOver={reset} autoDownload={true} />;
+      return <DownloadScreen files={[{ url: pdfUrl, name: downloadName }]} onStartOver={reset} autoDownload={true} />;
     }
 
     if (appFiles.length > 0) {

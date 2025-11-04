@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Page } from '../App';
 import { ToolCard } from '../components/ToolCard';
-import { Logo } from '../components/Logo';
 import {
   ImageIcon,
   MergeIcon,
@@ -206,8 +205,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
   return (
     <div className="w-full text-center">
-      <Logo className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-6" />
-      <h1 className="sr-only">LOLOPDF</h1>
+      <h1 className="text-7xl md:text-9xl font-extrabold mb-4 tracking-tighter">
+        <span className="bg-gradient-to-br from-orange-500 to-red-500 bg-clip-text text-transparent">LOLO</span>
+        <span className="text-gray-900 dark:text-white">PDF</span>
+      </h1>
       <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400 mb-12 max-w-3xl mx-auto">
         Your one-stop solution for converting, merging, editing, and enhancing PDF files.
       </p>

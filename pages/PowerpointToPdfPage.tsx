@@ -21,6 +21,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
   const [imageFiles, setImageFiles] = useState<ImageFile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
+  const [downloadName, setDownloadName] = useState('');
 
   useEffect(() => {
     return () => {
@@ -39,12 +40,16 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
         setError("Please select only one file. The first file has been chosen.");
     }
     
-    const validExtensions = ['.pptx'];
-    const validMimeTypes = ['application/vnd.openxmlformats-officedocument.presentationml.presentation'];
     const fileName = file.name.toLowerCase();
-    const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+    const isPptx = fileName.endsWith('.pptx') || file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    const isPpt = fileName.endsWith('.ppt') || file.type === 'application/vnd.ms-powerpoint';
 
-    if (!validMimeTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+    if (isPpt) {
+      setError("Unsupported .ppt format. Please re-save your presentation as a modern .pptx file and try again.");
+      return;
+    }
+
+    if (!isPptx) {
       setError("Invalid file type. Please upload a .pptx file.");
       return;
     }
@@ -57,6 +62,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
         const numSlides = result.slides.length;
         const newImageFiles: ImageFile[] = [];
         const baseName = file.name.replace(/\.pptx$/i, '');
+        setDownloadName(`${baseName}_LOLOPDF.zip`);
 
 
         for (let i = 0; i < numSlides; i++) {
@@ -87,6 +93,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
     setImageFiles([]);
     setError(null);
     setProgress('');
+    setDownloadName('');
   };
 
   return (
@@ -115,13 +122,13 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
             )}
 
             {imageFiles.length > 0 ? (
-                <DownloadScreen files={imageFiles} zipFileName="presentation-slides.zip" onStartOver={reset} />
+                <DownloadScreen files={imageFiles} zipFileName={downloadName} onStartOver={reset} />
             ) : (
                 <FileUpload 
                     onFilesSelect={handleFileChange}
                     title="Drag & Drop Your PowerPoint File Here"
                     accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                    description="Supports .pptx files"
+                    description="Supports .pptx files. Classic .ppt format is not supported."
                 />
             )}
         </div>

@@ -39,7 +39,7 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
       setError("The selected file is not a PDF. Please choose a valid PDF file.");
       return;
     }
-    setFileName(file.name.replace(/\.pdf$/i, '.csv'));
+    setFileName(file.name.replace(/\.pdf$/i, '_LOLOPDF.csv'));
     setIsProcessing(true);
 
     try {
@@ -125,7 +125,7 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
             )}
             
             {resultUrl ? (
-                <DownloadScreen pdfUrl={resultUrl} onStartOver={reset} fileName={fileName} autoDownload={true}/>
+                <DownloadScreen files={[{ url: resultUrl, name: fileName }]} onStartOver={reset} autoDownload={true}/>
             ) : (
                 <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
             )}

@@ -21,6 +21,7 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
   const [typedText, setTypedText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const signaturePadRef = useRef<any>(null);
@@ -155,6 +156,9 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
               height: sigHeight,
           });
 
+          const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+          setDownloadName(`${baseName}_signed_LOLOPDF.pdf`);
+          
           const pdfBytes = await pdfDoc.save();
           const blob = new Blob([pdfBytes], { type: 'application/pdf' });
           setResultUrl(URL.createObjectURL(blob));
@@ -173,6 +177,7 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
     setSignatureMode('draw');
     setIsProcessing(false);
     setResultUrl(null);
+    setDownloadName('');
     setError(null);
   };
   
@@ -287,7 +292,7 @@ export const SignPdfPage: React.FC<SignPdfPageProps> = ({ onNavigate }) => {
         )}
 
         {resultUrl ? (
-            <DownloadScreen files={[{url: resultUrl, name: "signed.pdf"}]} onStartOver={reset} />
+            <DownloadScreen files={[{url: resultUrl, name: downloadName}]} onStartOver={reset} />
         ) : !pdfFile ? (
             <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
         ) : !signature ? (

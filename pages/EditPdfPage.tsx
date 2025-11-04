@@ -40,6 +40,7 @@ export const EditPdfPage: React.FC<EditPdfPageProps> = ({ onNavigate }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -248,6 +249,9 @@ export const EditPdfPage: React.FC<EditPdfPageProps> = ({ onNavigate }) => {
             }
         }
         
+        const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+        setDownloadName(`${baseName}_edited_LOLOPDF.pdf`);
+        
         const pdfBytes = await newPdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         setResultUrl(URL.createObjectURL(blob));
@@ -267,6 +271,7 @@ export const EditPdfPage: React.FC<EditPdfPageProps> = ({ onNavigate }) => {
     setActiveTool('select');
     setSelectedElementId(null);
     setResultUrl(null);
+    setDownloadName('');
     setError(null);
   };
   
@@ -344,7 +349,7 @@ export const EditPdfPage: React.FC<EditPdfPageProps> = ({ onNavigate }) => {
         
         {isSignatureModalOpen && <SignatureModal onSignatureCreated={handleSignatureCreated} onClose={() => setIsSignatureModalOpen(false)} />}
         
-        {resultUrl ? <DownloadScreen files={[{ url: resultUrl, name: 'edited.pdf' }]} onStartOver={reset} />
+        {resultUrl ? <DownloadScreen files={[{ url: resultUrl, name: downloadName }]} onStartOver={reset} />
         : !pdfFile ? <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
         : renderEditor()}
       </div>

@@ -26,6 +26,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,6 +116,10 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
             });
         }
       }
+
+      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+      setDownloadName(`${baseName}_watermarked_LOLOPDF.pdf`);
+
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       setResultUrl(URL.createObjectURL(blob));
@@ -129,6 +134,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
   const reset = () => {
     setPdfFile(null);
     setResultUrl(null);
+    setDownloadName('');
     setPreviewUrl(null);
     setError(null);
   };
@@ -218,7 +224,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
         )}
 
         {resultUrl ? (
-            <DownloadScreen files={[{url: resultUrl, name: "watermarked.pdf"}]} onStartOver={reset} />
+            <DownloadScreen files={[{url: resultUrl, name: downloadName}]} onStartOver={reset} />
         ) : !pdfFile ? (
             <PdfUpload onFilesSelect={(f) => handleFileChange(f, 'pdf')} multiple={false} />
         ) : (

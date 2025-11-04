@@ -18,6 +18,7 @@ export type CompressionLevel = 'recommended' | 'high' | 'extreme' | 'custom';
 
 type ResultState = {
   url: string;
+  name: string;
   originalSize: number;
   newSize: number;
 };
@@ -137,10 +138,13 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
       }
 
       if (doc) {
+        const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+        const downloadName = `${baseName}_compressed_LOLOPDF.pdf`;
         const pdfBlob = doc.output('blob');
         const url = URL.createObjectURL(pdfBlob);
         setResult({
           url,
+          name: downloadName,
           originalSize: pdfFile.file.size,
           newSize: pdfBlob.size,
         });
@@ -178,7 +182,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
             <p><strong>Reduction:</strong> <span className="font-mono font-bold text-green-600 dark:text-green-400">{reduction > 0 ? `${reduction}%` : '< 1%'}</span></p>
         </div>
       );
-      return <DownloadScreen files={[{url: result.url, name: "compressed.pdf"}]} onStartOver={reset} details={details} autoDownload={true} />;
+      return <DownloadScreen files={[{url: result.url, name: result.name}]} onStartOver={reset} details={details} autoDownload={true} />;
     }
 
     if (pdfFile) {

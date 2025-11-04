@@ -30,6 +30,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
   const [splitPdfUrl, setSplitPdfUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -153,6 +154,9 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
       const copiedPages = await newPdfDoc.copyPages(originalPdfDoc, pagesToKeepIndices);
       copiedPages.forEach(page => newPdfDoc.addPage(page));
       
+      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+      setDownloadName(`${baseName}_split_LOLOPDF.pdf`);
+
       const pdfBytes = await newPdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -169,6 +173,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
     setPdfFile(null);
     setPages([]);
     setSplitPdfUrl(null);
+    setDownloadName('');
     setError(null);
     setIsProcessing(false);
     setIsSplitting(false);
@@ -176,7 +181,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (splitPdfUrl) {
-      return <DownloadScreen files={[{url: splitPdfUrl, name: "split.pdf"}]} onStartOver={reset} autoDownload={true} />;
+      return <DownloadScreen files={[{url: splitPdfUrl, name: downloadName}]} onStartOver={reset} autoDownload={true} />;
     }
     if (pages.length > 0) {
       return (

@@ -22,6 +22,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
   const [pages, setPages] = useState<RotatedPage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -85,6 +86,10 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
           pdfPage.setRotation(degrees(currentRotation + page.rotation));
         }
       });
+      
+      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+      setDownloadName(`${baseName}_rotated_LOLOPDF.pdf`);
+      
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       setResultUrl(URL.createObjectURL(blob));
@@ -99,6 +104,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
     setPdfFile(null);
     setPages([]);
     setResultUrl(null);
+    setDownloadName('');
     setError(null);
   };
   
@@ -133,7 +139,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
         {error && <div className="bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 p-3 rounded mb-4 w-full max-w-lg text-center"><AlertTriangleIcon className="inline w-5 h-5 mr-2" />{error}</div>}
         {isProcessing && <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50"><LoaderIcon /><p className="text-xl text-white mt-4">Processing...</p></div>}
 
-        {resultUrl ? <DownloadScreen files={[{url: resultUrl, name: "rotated.pdf"}]} onStartOver={reset} /> : !pdfFile ? <PdfUpload onFilesSelect={handleFileChange} multiple={false} /> : renderPages()}
+        {resultUrl ? <DownloadScreen files={[{url: resultUrl, name: downloadName}]} onStartOver={reset} /> : !pdfFile ? <PdfUpload onFilesSelect={handleFileChange} multiple={false} /> : renderPages()}
       </div>
     </div>
   );

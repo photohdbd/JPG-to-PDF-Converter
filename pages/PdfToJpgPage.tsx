@@ -51,7 +51,7 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
     }
 
     const baseName = file.name.replace(/\.pdf$/i, '');
-    setFileName(`${baseName}.zip`);
+    setFileName(`${baseName}_LOLOPDF.zip`);
     setIsProcessing(true);
     try {
       const arrayBuffer = await file.arrayBuffer();

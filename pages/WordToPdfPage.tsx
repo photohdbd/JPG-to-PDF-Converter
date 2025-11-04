@@ -24,6 +24,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
   const [docxFiles, setDocxFiles] = useState<DocxFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,7 +80,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
       errorMessage += `${rejectedCount} file(s) were not valid Word documents and were ignored. `;
     }
     if (unsupportedDocCount > 0) {
-        errorMessage += `${unsupportedDocCount} .doc file(s) are not supported for conversion; please re-save them as .docx from your word processor.`;
+        errorMessage += `${unsupportedDocCount} .doc file(s) were ignored. The classic .doc format isn't supported. Please re-save them as modern .docx files first.`;
     }
     if(errorMessage) setError(errorMessage.trim());
     
@@ -101,6 +102,10 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
     try {
       const { jsPDF } = jspdf;
       const pdf = new jsPDF('p', 'pt', 'a4');
+      
+      const baseName = filesToConvert[0].file.name.replace(/\.[^/.]+$/, "");
+      const finalName = filesToConvert.length > 1 ? `${baseName}_and_more` : baseName;
+      setDownloadName(`${finalName}_LOLOPDF.pdf`);
       
       let combinedHtml = '';
 
@@ -166,13 +171,14 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
   const reset = () => {
     setDocxFiles([]);
     setPdfUrl(null);
+    setDownloadName('');
     setError(null);
     setIsConverting(false);
   };
 
   const renderContent = () => {
     if (pdfUrl) {
-      return <DownloadScreen files={[{url: pdfUrl, name: "word-to-pdf.pdf"}]} onStartOver={reset} autoDownload={true} />;
+      return <DownloadScreen files={[{url: pdfUrl, name: downloadName}]} onStartOver={reset} autoDownload={true} />;
     }
 
     if (docxFiles.length > 0) {
@@ -195,7 +201,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
             onFilesSelect={handleFilesChange}
             title="Drag & Drop Your Word Files Here"
             accept={acceptTypes}
-            description="Supports .docx for conversion. Older .doc files cannot be converted."
+            description="Supports modern .docx files. Older .doc files are not supported and will be ignored."
         />
     );
   };

@@ -17,6 +17,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
   const [pdfFile, setPdfFile] = useState<{ file: File; arrayBuffer: ArrayBuffer } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   
   // Options
@@ -73,6 +74,9 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
         });
       }
 
+      const baseName = pdfFile.file.name.replace(/\.[^/.]+$/, "");
+      setDownloadName(`${baseName}_numbered_LOLOPDF.pdf`);
+
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       setResultUrl(URL.createObjectURL(blob));
@@ -87,6 +91,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
   const reset = () => {
     setPdfFile(null);
     setResultUrl(null);
+    setDownloadName('');
     setError(null);
   };
   
@@ -159,7 +164,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
         )}
 
         {resultUrl ? (
-            <DownloadScreen files={[{url: resultUrl, name: "numbered.pdf"}]} onStartOver={reset} />
+            <DownloadScreen files={[{url: resultUrl, name: downloadName }]} onStartOver={reset} />
         ) : !pdfFile ? (
             <PdfUpload onFilesSelect={handleFileChange} multiple={false} />
         ) : (
