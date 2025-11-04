@@ -196,7 +196,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (pdfUrl) {
-      return <DownloadScreen files={[{ url: pdfUrl, name: 'converted-files.pdf' }]} onStartOver={reset} />;
+      return <DownloadScreen files={[{ url: pdfUrl, name: 'converted-files.pdf' }]} onStartOver={reset} autoDownload={true} />;
     }
 
     if (appFiles.length > 0) {

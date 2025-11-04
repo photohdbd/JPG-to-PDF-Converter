@@ -178,7 +178,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
             <p><strong>Reduction:</strong> <span className="font-mono font-bold text-green-600 dark:text-green-400">{reduction > 0 ? `${reduction}%` : '< 1%'}</span></p>
         </div>
       );
-      return <DownloadScreen files={[{url: result.url, name: "compressed.pdf"}]} onStartOver={reset} details={details} />;
+      return <DownloadScreen files={[{url: result.url, name: "compressed.pdf"}]} onStartOver={reset} details={details} autoDownload={true} />;
     }
 
     if (pdfFile) {

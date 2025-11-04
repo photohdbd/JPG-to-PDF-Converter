@@ -172,7 +172,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (pdfUrl) {
-      return <DownloadScreen files={[{url: pdfUrl, name: "word-to-pdf.pdf"}]} onStartOver={reset} />;
+      return <DownloadScreen files={[{url: pdfUrl, name: "word-to-pdf.pdf"}]} onStartOver={reset} autoDownload={true} />;
     }
 
     if (docxFiles.length > 0) {

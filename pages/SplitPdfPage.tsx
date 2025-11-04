@@ -176,7 +176,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (splitPdfUrl) {
-      return <DownloadScreen files={[{url: splitPdfUrl, name: "split.pdf"}]} onStartOver={reset} />;
+      return <DownloadScreen files={[{url: splitPdfUrl, name: "split.pdf"}]} onStartOver={reset} autoDownload={true} />;
     }
     if (pages.length > 0) {
       return (

@@ -116,7 +116,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
 
   const renderContent = () => {
     if (mergedPdfUrl) {
-      return <DownloadScreen files={[{url: mergedPdfUrl, name: "merged.pdf"}]} onStartOver={reset} />;
+      return <DownloadScreen files={[{url: mergedPdfUrl, name: "merged.pdf"}]} onStartOver={reset} autoDownload={true} />;
     }
 
     if (pdfFiles.length > 0) {
