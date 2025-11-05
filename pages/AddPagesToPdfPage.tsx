@@ -4,6 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon, PlusIcon, RefreshCwIcon, TrashIcon, ArrowRightIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const pdfjsLib: any;
 declare const jspdf: any;
@@ -28,6 +29,7 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { incrementConversions } = useUsage();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragItem = useRef<number | null>(null);
@@ -183,6 +185,7 @@ export const AddPagesToPdfPage: React.FC<AddPagesToPdfPageProps> = ({ onNavigate
         const url = URL.createObjectURL(blob);
         setResultUrl(url);
         setDownloadName('lolopdf_combined.pdf');
+        incrementConversions();
     } catch(e) {
         console.error(e);
         setError(e instanceof Error ? e.message : "An error occurred while creating the PDF.");

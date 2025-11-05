@@ -4,15 +4,14 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { callStirlingApi } from '../utils';
 import { useUsage } from '../contexts/UsageContext';
 
-declare const pdfjsLib: any;
-
-interface PdfToWordPageProps {
+interface PdfToXpsPageProps {
   onNavigate: (page: Page) => void;
 }
 
-export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
+export const PdfToXpsPage: React.FC<PdfToXpsPageProps> = ({ onNavigate }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +20,6 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
   const { incrementConversions } = useUsage();
 
   useEffect(() => {
-      if (typeof pdfjsLib !== 'undefined') {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
-      }
       return () => {
           if (resultUrl) URL.revokeObjectURL(resultUrl);
       }
@@ -39,28 +35,17 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
       setError("The selected file is not a PDF. Please choose a valid PDF file.");
       return;
     }
+
     setIsProcessing(true);
-    setProgressMessage('Extracting text...');
-    
+    setProgressMessage('Converting to XPS...');
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-      let fullText = '';
+      const formData = new FormData();
+      formData.append('file', file);
+      const { blob, filename } = await callStirlingApi('/api/v1/convert/pdf-to-xps', formData, setProgressMessage);
       
-      for (let i = 1; i <= pdf.numPages; i++) {
-        setProgressMessage(`Processing page ${i} of ${pdf.numPages}...`);
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n';
-      }
-
-      const blob = new Blob([fullText], { type: 'application/msword;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      setResultUrl(url);
-      setFileName(file.name.replace(/\.pdf$/i, '.doc'));
+      setResultUrl(URL.createObjectURL(blob));
+      setFileName(filename);
       incrementConversions();
-
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Could not process the PDF. It might be corrupted or password-protected.");
@@ -82,13 +67,13 @@ export const PdfToWordPage: React.FC<PdfToWordPageProps> = ({ onNavigate }) => {
     <div className="w-full max-w-4xl flex flex-col">
         <BackButton onClick={() => onNavigate('home')} />
         <div className="w-full flex flex-col items-center justify-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">PDF to Word Converter</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white">PDF to XPS Converter</h1>
             <p className="text-md md:text-lg text-gray-400 mb-8 max-w-2xl text-center">
-                Convert your PDFs to editable Word documents. Extracts text quickly for easy editing.
+                Convert your PDF files into XPS documents, suitable for viewing on Windows platforms.
             </p>
-             <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
+            <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-                <span className="block sm:inline"><b>Note:</b> This tool performs text extraction. Complex formatting, tables, and images from the original PDF will not be preserved.</span>
+                <span className="block sm:inline"><b>Note:</b> This tool works best with text-based PDFs. Scanned documents or complex layouts may not convert accurately.</span>
             </div>
             {error && (
             <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-2xl flex items-center shadow-lg">

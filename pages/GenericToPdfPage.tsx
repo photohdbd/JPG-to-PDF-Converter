@@ -5,6 +5,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const jspdf: any;
 
@@ -39,6 +40,7 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { incrementConversions } = useUsage();
 
   const acceptedTypesArray = acceptedMimeTypes.split(',').map(t => t.trim().toLowerCase());
 
@@ -175,6 +177,7 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
       const url = URL.createObjectURL(pdfBlob);
       setPdfUrl(url);
       setDownloadName('lolopdf_converted.pdf');
+      incrementConversions(filesToConvert.length);
       setAppFiles([]);
     } catch (err) {
       console.error(err);
@@ -183,7 +186,7 @@ export const GenericToPdfPage: React.FC<GenericToPdfPageProps> = ({
       setIsConverting(false);
       setProgressMessage('');
     }
-  }, [appFiles, isClientSideCompatible]);
+  }, [appFiles, isClientSideCompatible, incrementConversions]);
 
   const handleAddMoreFiles = () => {
     fileInputRef.current?.click();

@@ -5,6 +5,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const pdfjsLib: any;
 declare const jspdf: any;
@@ -33,6 +34,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -201,6 +203,7 @@ export const SplitPdfPage: React.FC<SplitPdfPageProps> = ({ onNavigate }) => {
 
       setSplitPdfUrl(url);
       setDownloadName(`${originalName}_split.pdf`);
+      incrementConversions();
 
     } catch (err) {
       console.error(err);

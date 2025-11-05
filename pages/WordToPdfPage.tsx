@@ -4,6 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon, WordIcon, ArrowRightIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const JSZip: any;
 declare const jspdf: any;
@@ -28,6 +29,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     return () => {
@@ -186,6 +188,7 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
         
         setPdfUrl(url);
         setDownloadName(`${baseName}.pdf`);
+        incrementConversions();
         setWordFile(null);
 
     } catch (err) {

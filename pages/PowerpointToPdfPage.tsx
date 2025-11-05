@@ -5,6 +5,7 @@ import { LoaderIcon, AlertTriangleIcon, PowerpointIcon, ArrowRightIcon } from '.
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 import { callStirlingApi } from '../utils';
+import { useUsage } from '../contexts/UsageContext';
 
 interface PowerpointToPdfPageProps {
   onNavigate: (page: Page) => void;
@@ -26,6 +27,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
   const [downloadName, setDownloadName] = useState('');
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     return () => {
@@ -76,6 +78,7 @@ export const PowerpointToPdfPage: React.FC<PowerpointToPdfPageProps> = ({ onNavi
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
         setDownloadName(filename);
+        incrementConversions();
     } catch (err) {
         console.error(err);
         setError(err instanceof Error ? err.message : "Failed to convert presentation. The file may be corrupt or in an unsupported format.");

@@ -32,6 +32,9 @@ import { useAuth } from './contexts/AuthContext';
 import { AddPagesToPdfPage } from './pages/AddPagesToPdfPage';
 import { AboutUsPage } from './pages/AboutUsPage';
 import { GenericToPdfPage } from './pages/GenericToPdfPage';
+import { XpsToPdfPage } from './pages/XpsToPdfPage';
+import { OxpsToPdfPage } from './pages/OxpsToPdfPage';
+import { PdfToXpsPage } from './pages/PdfToXpsPage';
 
 export type Page =
   | 'home'
@@ -77,7 +80,10 @@ export type Page =
   | 'text-to-pdf'
   | 'ebook-to-pdf'
   | 'cad-to-pdf'
-  | 'graphics-to-pdf';
+  | 'graphics-to-pdf'
+  | 'xps-to-pdf'
+  | 'oxps-to-pdf'
+  | 'pdf-to-xps';
 
 
 const App: React.FC = () => {
@@ -171,6 +177,9 @@ const App: React.FC = () => {
       case 'ebook-to-pdf': return <GenericToPdfPage onNavigate={navigate} pageTitle="E-book to PDF Converter" pageDescription="Convert e-book files (EPUB, MOBI, AZW, FB2) to PDF for easy reading." fileUploadTitle="Drag & Drop Your E-book Files Here" acceptedMimeTypes=".epub,.mobi,.azw,.fb2,application/epub+zip" fileTypeDescription="Supports EPUB, MOBI, AZW, FB2 files" />;
       case 'cad-to-pdf': return <GenericToPdfPage onNavigate={navigate} pageTitle="CAD to PDF Converter" pageDescription="Convert CAD drawings (DWG, DXF, DGN) to PDF for easy sharing and viewing." fileUploadTitle="Drag & Drop Your CAD Files Here" acceptedMimeTypes=".dwg,.dxf,.dgn,image/vnd.dwg,image/vnd.dxf" fileTypeDescription="Supports DWG, DXF, DGN files" />;
       case 'graphics-to-pdf': return <GenericToPdfPage onNavigate={navigate} pageTitle="Graphics & Design to PDF Converter" pageDescription="Convert design files (AI, PSD, EPS, INDD) into shareable PDFs." fileUploadTitle="Drag & Drop Your Design Files Here" acceptedMimeTypes=".ai,.psd,.eps,.indd,application/postscript,image/vnd.adobe.photoshop" fileTypeDescription="Supports AI, PSD, EPS, INDD files" />;
+      case 'xps-to-pdf': return <XpsToPdfPage onNavigate={navigate} />;
+      case 'oxps-to-pdf': return <OxpsToPdfPage onNavigate={navigate} />;
+      case 'pdf-to-xps': return <PdfToXpsPage onNavigate={navigate} />;
 
       case 'home':
       default:

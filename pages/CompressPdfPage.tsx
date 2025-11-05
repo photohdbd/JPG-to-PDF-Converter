@@ -5,6 +5,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon, ArrowRightIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const pdfjsLib: any;
 declare const jspdf: any;
@@ -42,6 +43,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
   const [processingProgress, setProcessingProgress] = useState('');
   const [result, setResult] = useState<ResultState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -137,6 +139,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
         originalSize: pdfFile.file.size,
         newSize: blob.size,
       });
+      incrementConversions();
 
     } catch (err) {
       console.error(err);

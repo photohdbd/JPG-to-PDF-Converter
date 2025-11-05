@@ -5,6 +5,7 @@ import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 import { callStirlingApi } from '../utils';
+import { useUsage } from '../contexts/UsageContext';
 
 interface PdfToExcelPageProps {
   onNavigate: (page: Page) => void;
@@ -16,6 +17,7 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [progressMessage, setProgressMessage] = useState('');
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
       return () => {
@@ -43,6 +45,7 @@ export const PdfToExcelPage: React.FC<PdfToExcelPageProps> = ({ onNavigate }) =>
       
       setResultUrl(URL.createObjectURL(blob));
       setFileName(filename);
+      incrementConversions();
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Could not process the PDF. It might be corrupted or password-protected.");

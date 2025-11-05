@@ -4,6 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const pdfjsLib: any;
 declare const jspdf: any;
@@ -21,6 +22,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
+  const { incrementConversions } = useUsage();
   
   // Options
   const [position, setPosition] = useState<Position>('bottom-center');
@@ -108,6 +110,7 @@ export const AddPageNumbersPage: React.FC<AddPageNumbersPageProps> = ({ onNaviga
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       setDownloadName(pdfFile.file.name.replace(/\.pdf$/i, '_numbered.pdf'));
+      incrementConversions();
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed to add page numbers. The PDF might be corrupted or protected.");

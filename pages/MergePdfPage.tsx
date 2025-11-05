@@ -5,6 +5,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const pdfjsLib: any;
 declare const jspdf: any;
@@ -26,6 +27,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -122,6 +124,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
       const url = URL.createObjectURL(blob);
       setMergedPdfUrl(url);
       setDownloadName('lolopdf_merged.pdf');
+      incrementConversions(pdfFiles.length);
       setPdfFiles([]);
       
     } catch (err) {
@@ -131,7 +134,7 @@ export const MergePdfPage: React.FC<MergePdfPageProps> = ({ onNavigate }) => {
       setIsMerging(false);
       setProgressMessage('');
     }
-  }, [pdfFiles]);
+  }, [pdfFiles, incrementConversions]);
 
   const handleAddMoreFiles = () => {
     fileInputRef.current?.click();

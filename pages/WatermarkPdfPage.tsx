@@ -4,6 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const pdfjsLib: any;
 declare const jspdf: any;
@@ -29,6 +30,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -140,6 +142,7 @@ export const WatermarkPdfPage: React.FC<WatermarkPdfPageProps> = ({ onNavigate }
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       setDownloadName(pdfFile.file.name.replace(/\.pdf$/i, '_watermarked.pdf'));
+      incrementConversions();
 
     } catch (err) {
       console.error(err)

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Page } from '../App';
 import { useAuth } from '../contexts/AuthContext';
-// Fix: Removed unused imports for UserIcon and MailIcon as they are not used and conflict with local declarations.
+import { useUsage } from '../contexts/UsageContext';
 import { StarIcon, BarChartIcon } from '../components/DashboardIcons';
 
 interface DashboardPageProps {
@@ -20,6 +20,7 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string |
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     const { currentUser } = useAuth();
+    const { conversions, maxConversions, subscriptionPlan } = useUsage();
 
     if (!currentUser) {
         // This should ideally be handled by a protected route in App.tsx
@@ -34,10 +35,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         );
     }
     
-    // Placeholder data
-    const subscriptionPlan = "Free Plan";
-    const filesConverted = 42;
-    const maxConversions = "500";
+    const filesConverted = conversions;
 
     return (
         <div className="w-full max-w-5xl text-white">
@@ -81,7 +79,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                          <div className="w-full bg-gray-700 rounded-full h-4">
                             <div 
                                 className="bg-gradient-to-r from-brand-primary to-brand-secondary h-4 rounded-full" 
-                                style={{width: `${(filesConverted / parseInt(maxConversions)) * 100}%`}}
+                                style={{width: `${(filesConverted / maxConversions) * 100}%`}}
                             ></div>
                          </div>
                          <p className="text-right text-sm mt-2 text-gray-400">{filesConverted} / {maxConversions} conversions</p>

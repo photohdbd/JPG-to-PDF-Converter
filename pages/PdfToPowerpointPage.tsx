@@ -5,6 +5,7 @@ import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 import { callStirlingApi } from '../utils';
+import { useUsage } from '../contexts/UsageContext';
 
 interface PdfToPowerpointPageProps {
   onNavigate: (page: Page) => void;
@@ -16,6 +17,7 @@ export const PdfToPowerpointPage: React.FC<PdfToPowerpointPageProps> = ({ onNavi
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
   const [downloadName, setDownloadName] = useState('');
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     return () => {
@@ -45,6 +47,7 @@ export const PdfToPowerpointPage: React.FC<PdfToPowerpointPageProps> = ({ onNavi
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       setDownloadName(filename);
+      incrementConversions();
       
     } catch (err) {
       console.error(err);

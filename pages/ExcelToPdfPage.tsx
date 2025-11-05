@@ -5,6 +5,7 @@ import { LoaderIcon, AlertTriangleIcon, ExcelIcon, ArrowRightIcon } from '../com
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 import { callStirlingApi } from '../utils';
+import { useUsage } from '../contexts/UsageContext';
 
 interface ExcelToPdfPageProps {
   onNavigate: (page: Page) => void;
@@ -26,6 +27,7 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
+  const { incrementConversions } = useUsage();
 
    useEffect(() => {
     return () => {
@@ -75,6 +77,7 @@ export const ExcelToPdfPage: React.FC<ExcelToPdfPageProps> = ({ onNavigate }) =>
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
         setDownloadName(filename);
+        incrementConversions();
     } catch (err) {
         console.error(err);
         setError(err instanceof Error ? err.message : "Failed to convert spreadsheet. The file may be corrupt or in an unsupported format.");

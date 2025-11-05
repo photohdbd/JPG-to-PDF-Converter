@@ -4,6 +4,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const pdfjsLib: any;
 declare const JSZip: any;
@@ -18,6 +19,7 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
   const [downloadName, setDownloadName] = useState('');
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     if (typeof pdfjsLib !== 'undefined') {
@@ -83,6 +85,7 @@ export const PdfToJpgPage: React.FC<PdfToJpgPageProps> = ({ onNavigate }) => {
 
       setResultUrl(url);
       setDownloadName(`${originalName}_images.zip`);
+      incrementConversions();
       
     } catch (err) {
       console.error(err);

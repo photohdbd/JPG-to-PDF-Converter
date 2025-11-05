@@ -5,6 +5,7 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
+import { useUsage } from '../contexts/UsageContext';
 
 declare const jspdf: any;
 
@@ -53,6 +54,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { incrementConversions } = useUsage();
 
   useEffect(() => {
     return () => {
@@ -178,6 +180,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
         const url = URL.createObjectURL(pdfBlob);
         setPdfUrl(url);
         setDownloadName('lolopdf_converted.pdf');
+        incrementConversions(filesToConvert.length);
         setAppFiles([]);
     } catch (err) {
       console.error(err);
@@ -186,7 +189,7 @@ export const ConverterPage: React.FC<ConverterPageProps> = ({ onNavigate }) => {
       setIsConverting(false);
       setProgressMessage('');
     }
-  }, [appFiles]);
+  }, [appFiles, incrementConversions]);
 
 
   const handleAddMoreFiles = () => {

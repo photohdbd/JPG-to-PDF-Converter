@@ -5,6 +5,7 @@ import { LoaderIcon, AlertTriangleIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 import { callStirlingApi } from '../utils';
+import { useUsage } from '../contexts/UsageContext';
 
 
 interface UnlockPdfPageProps {
@@ -19,6 +20,7 @@ export const UnlockPdfPage: React.FC<UnlockPdfPageProps> = ({ onNavigate }) => {
   const [downloadName, setDownloadName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState('');
+  const { incrementConversions } = useUsage();
 
   const handleFileChange = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -45,6 +47,7 @@ export const UnlockPdfPage: React.FC<UnlockPdfPageProps> = ({ onNavigate }) => {
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       setDownloadName(filename);
+      incrementConversions();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to unlock PDF. The password may be incorrect or the file corrupted.");
     } finally {
