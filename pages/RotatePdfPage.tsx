@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PdfUpload } from '../components/PdfUpload';
 import { DownloadScreen } from '../components/DownloadScreen';
-import { LoaderIcon, AlertTriangleIcon, RefreshCwIcon } from '../components/Icons';
+import { LoaderIcon, AlertTriangleIcon, RefreshCwIcon, RotateCcwIcon, RotateCwIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
 
@@ -10,6 +10,7 @@ declare const jspdf: any;
 
 interface PagePreview {
   dataUrl: string;
+  rotation: 0 | 90 | 180 | 270;
 }
 
 interface RotatePdfPageProps {
@@ -19,7 +20,6 @@ interface RotatePdfPageProps {
 export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
   const [pdfFile, setPdfFile] = useState<{ file: File; arrayBuffer: ArrayBuffer } | null>(null);
   const [pages, setPages] = useState<PagePreview[]>([]);
-  const [rotation, setRotation] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('');
@@ -56,7 +56,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
         const context = canvas.getContext('2d');
         if (context) {
           await page.render({ canvasContext: context, viewport }).promise;
-          pageData.push({ dataUrl: canvas.toDataURL() });
+          pageData.push({ dataUrl: canvas.toDataURL(), rotation: 0 });
         }
       }
       setPages(pageData);
@@ -69,10 +69,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
   };
 
   const handleProcess = async () => {
-    if (!pdfFile || rotation === 0) {
-        setError("Please select a rotation angle other than 0.");
-        return;
-    };
+    if (!pdfFile) return;
     setIsProcessing(true);
     setProgressMessage("Applying rotation...");
     try {
@@ -95,7 +92,8 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
         await page.render({canvasContext: context, viewport }).promise;
         const imgData = canvas.toDataURL('image/jpeg');
         
-        const needsSwap = rotation === 90 || rotation === 270;
+        const pageRotation = pages[i - 1].rotation;
+        const needsSwap = pageRotation === 90 || pageRotation === 270;
         const pageWidth = needsSwap ? canvas.height : canvas.width;
         const pageHeight = needsSwap ? canvas.width : canvas.height;
 
@@ -107,7 +105,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
           page1.height = pageHeight;
         }
 
-        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'NONE', rotation);
+        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'NONE', pageRotation);
       }
 
       const blob = doc.output('blob');
@@ -126,26 +124,50 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
     setPdfFile(null);
     pages.forEach(p => URL.revokeObjectURL(p.dataUrl));
     setPages([]);
-    setRotation(0);
     if(resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
     setDownloadName('');
     setError(null);
   };
   
+  const handleRotateAll = (angle: 90 | 180 | 270) => {
+    setPages(pages.map(p => ({...p, rotation: angle})))
+  }
+  
+  const handleRotatePage = (index: number, direction: 'left' | 'right') => {
+      setPages(prevPages => {
+          const newPages = [...prevPages];
+          const currentRotation = newPages[index].rotation;
+          let newRotation;
+          if (direction === 'left') {
+              newRotation = (currentRotation - 90 + 360) % 360;
+          } else { // right
+              newRotation = (currentRotation + 90) % 360;
+          }
+          newPages[index].rotation = newRotation as PagePreview['rotation'];
+          return newPages;
+      });
+  };
+
   const renderPages = () => (
      <div className="w-full">
-        <div className="flex justify-center items-center gap-4 mb-6 p-4 bg-gray-200 dark:bg-gray-800 rounded-lg">
-            <span className="font-semibold">Rotate all pages:</span>
-            <button onClick={() => setRotation(270)} className={`px-4 py-2 rounded font-semibold ${rotation === 270 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>90° Left ↺</button>
-            <button onClick={() => setRotation(180)} className={`px-4 py-2 rounded font-semibold ${rotation === 180 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>180°</button>
-            <button onClick={() => setRotation(90)} className={`px-4 py-2 rounded font-semibold ${rotation === 90 ? 'bg-brand-primary text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>90° Right ↻</button>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6 p-4 bg-gray-200 dark:bg-gray-800 rounded-lg">
+            <span className="font-semibold text-black dark:text-white">Rotate all pages:</span>
+            <div className="flex gap-2">
+                <button onClick={() => handleRotateAll(270)} className="px-4 py-2 rounded font-semibold bg-gray-300 dark:bg-gray-700 text-black dark:text-white hover:bg-brand-primary hover:text-white transition-colors">90° Left ↺</button>
+                <button onClick={() => handleRotateAll(180)} className="px-4 py-2 rounded font-semibold bg-gray-300 dark:bg-gray-700 text-black dark:text-white hover:bg-brand-primary hover:text-white transition-colors">180°</button>
+                <button onClick={() => handleRotateAll(90)} className="px-4 py-2 rounded font-semibold bg-gray-300 dark:bg-gray-700 text-black dark:text-white hover:bg-brand-primary hover:text-white transition-colors">90° Right ↻</button>
+            </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
             {pages.map((page, index) => (
-                <div key={index} className="bg-white dark:bg-gray-800 p-2 rounded shadow-lg text-center">
-                    <img src={page.dataUrl} alt={`Page ${index + 1}`} className="w-full h-auto rounded mb-2 transition-transform duration-300" style={{ transform: `rotate(${rotation}deg)` }}/>
-                    <p className="text-sm">Page {index + 1}</p>
+                <div key={index} className="relative group bg-white dark:bg-gray-800 p-2 rounded shadow-lg text-center transition-all">
+                    <img src={page.dataUrl} alt={`Page ${index + 1}`} className="w-full h-auto rounded mb-2 transition-transform duration-300" style={{ transform: `rotate(${page.rotation}deg)` }}/>
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                       <button onClick={() => handleRotatePage(index, 'left')} className="p-2 bg-white/80 text-black rounded-full hover:bg-white" title="Rotate Left"><RotateCcwIcon className="w-5 h-5"/></button>
+                       <button onClick={() => handleRotatePage(index, 'right')} className="p-2 bg-white/80 text-black rounded-full hover:bg-white" title="Rotate Right"><RotateCwIcon className="w-5 h-5"/></button>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Page {index + 1}</p>
                 </div>
             ))}
         </div>
@@ -153,7 +175,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
             <button onClick={reset} className="flex items-center gap-2 px-4 py-2 bg-red-700 dark:bg-red-800 text-white font-semibold rounded-md hover:bg-red-600 dark:hover:bg-red-700 transition-colors">
                 <RefreshCwIcon className="w-5 h-5"/> Start Over
             </button>
-            <button onClick={handleProcess} className="px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary disabled:bg-gray-500" disabled={rotation === 0}>
+            <button onClick={handleProcess} className="px-8 py-3 bg-brand-primary text-white font-bold rounded-lg shadow-lg hover:bg-brand-secondary">
                 Apply Changes & Download
             </button>
         </div>
@@ -165,7 +187,7 @@ export const RotatePdfPage: React.FC<RotatePdfPageProps> = ({ onNavigate }) => {
       <BackButton onClick={() => onNavigate('home')} />
       <div className="w-full flex flex-col items-center justify-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Rotate PDF</h1>
-        <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">Rotate all pages in your PDF document.</p>
+        <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-xl text-center">Rotate all pages in your PDF document, or rotate individual pages.</p>
         {error && <div className="bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 p-3 rounded mb-4 w-full max-w-lg text-center"><AlertTriangleIcon className="inline w-5 h-5 mr-2" />{error}</div>}
         {isProcessing && <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50"><LoaderIcon /><p className="text-xl text-white mt-4">{progressMessage}</p></div>}
 

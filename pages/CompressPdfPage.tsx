@@ -5,7 +5,9 @@ import { DownloadScreen } from '../components/DownloadScreen';
 import { LoaderIcon, AlertTriangleIcon, ArrowRightIcon } from '../components/Icons';
 import { BackButton } from '../components/BackButton';
 import { Page } from '../App';
-import { callStirlingApi } from '../utils';
+
+declare const pdfjsLib: any;
+declare const jspdf: any;
 
 type PdfFileState = {
   file: File;
@@ -42,6 +44,9 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+    }
     return () => {
       if (result?.url) {
         URL.revokeObjectURL(result.url);
@@ -76,38 +81,73 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
     setProcessingProgress('Initializing...');
 
     try {
-      const getApiLevel = (): string => {
+      const getJpegQuality = (): number => {
         switch (compressionLevel) {
-          case 'recommended': return '3'; // Moderate
-          case 'high': return '2'; // High
-          case 'extreme': return '1'; // Highest
-          default: return '3';
+          case 'recommended': return 0.8;
+          case 'high': return 0.6;
+          case 'extreme': return 0.4;
+          default: return 0.8;
         }
       };
 
-      const formData = new FormData();
-      formData.append('file', pdfFile.file);
-      formData.append('compressionLevel', getApiLevel());
+      const jpegQuality = getJpegQuality();
+      const arrayBuffer = await pdfFile.file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+      const numPages = pdf.numPages;
 
-      const { blob, filename } = await callStirlingApi('/api/v1/general/compress', formData, setProcessingProgress);
+      const { jsPDF } = jspdf;
+      const doc = new jsPDF({ orientation: 'p', unit: 'px', hotfixes: ['px_scaling'] });
 
+      for (let i = 1; i <= numPages; i++) {
+        setProcessingProgress(`Compressing page ${i} of ${numPages}...`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.5 }); // A good balance of quality and performance
+
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Could not get canvas context');
+
+        await page.render({ canvasContext: context, viewport }).promise;
+        const imgData = canvas.toDataURL('image/jpeg', jpegQuality);
+
+        const pageWidth = canvas.width;
+        const pageHeight = canvas.height;
+        
+        if (i > 1) {
+            doc.addPage([pageWidth, pageHeight]);
+        } else {
+            const page1 = doc.internal.pages[1];
+            page1.width = pageWidth;
+            page1.height = pageHeight;
+        }
+
+        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+      }
+
+      setProcessingProgress('Finalizing compressed PDF...');
+      const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
+      const originalName = pdfFile.file.name.replace(/\.pdf$/i, '');
+
       setResult({
         url,
-        name: filename,
+        name: `${originalName}_compressed.pdf`,
         originalSize: pdfFile.file.size,
         newSize: blob.size,
       });
 
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? `Compression failed: ${err.message}` : "An unknown error occurred during compression.");
+      setError(err instanceof Error ? `Compression failed: ${err.message}` : "An unknown error occurred. The PDF might be corrupt or protected.");
     } finally {
       setIsProcessing(false);
       setProcessingProgress('');
       setPdfFile(null);
     }
   };
+
 
   const reset = () => {
     setPdfFile(null);
@@ -126,7 +166,7 @@ export const CompressPdfPage: React.FC<CompressPdfPageProps> = ({ onNavigate }) 
         <div className="space-y-2">
             <p><strong>Original Size:</strong> <span className="font-mono">{formatBytes(result.originalSize)}</span></p>
             <p><strong>New Size:</strong> <span className="font-mono text-green-600 dark:text-green-400">{formatBytes(result.newSize)}</span></p>
-            <p><strong>Reduction:</strong> <span className="font-mono font-bold text-green-600 dark:text-green-400">{reduction > 0 ? `${reduction}%` : '< 1%'}</span></p>
+            <p><strong>Reduction:</strong> <span className="font-mono font-bold text-green-600 dark:text-green-400">{reduction > 0 ? `${reduction}%` : 'Minimal'}</span></p>
         </div>
       );
       return <DownloadScreen files={[{url: result.url, name: result.name}]} onStartOver={reset} details={details} autoDownload={true} />;
