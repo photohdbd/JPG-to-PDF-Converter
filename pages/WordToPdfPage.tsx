@@ -67,133 +67,70 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
     setWordFile(file);
   };
 
-    const handleConvertToPdf = async () => {
+  const handleConvertToPdf = async () => {
     if (!wordFile) return;
 
     setIsConverting(true);
     setError(null);
-    setProgressMessage('Unpacking Word document...');
+    setProgressMessage('Reading Word file...');
 
     try {
         const { jsPDF } = jspdf;
-        const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
-        const margin = 40;
-        const pdfWidth = doc.internal.pageSize.getWidth() - margin * 2;
-        let y = margin;
-
         const zip = await JSZip.loadAsync(wordFile);
-
-        setProgressMessage('Reading image relationships...');
-        const relsFile = zip.file('word/_rels/document.xml.rels');
-        const imageRels = new Map<string, string>();
-        if (relsFile) {
-            const relsText = await relsFile.async('string');
-            const relsParser = new DOMParser();
-            const relsXml = relsParser.parseFromString(relsText, 'application/xml');
-            const relationships = relsXml.getElementsByTagName('Relationship');
-            for (let i = 0; i < relationships.length; i++) {
-                const rel = relationships[i];
-                if (rel.getAttribute('Type')?.endsWith('image')) {
-                    const id = rel.getAttribute('Id');
-                    const target = rel.getAttribute('Target');
-                    if (id && target) {
-                        imageRels.set(id, `word/${target}`);
-                    }
-                }
-            }
-        }
-
-        setProgressMessage('Loading images...');
-        const images = new Map<string, { data: string, type: string }>();
-        for (const [id, path] of imageRels.entries()) {
-            const imageFile = zip.file(path);
-            if (imageFile) {
-                const fileData = await imageFile.async('base64');
-                const type = path.split('.').pop()?.toUpperCase() || 'PNG';
-                images.set(id, { data: `data:image/${type.toLowerCase()};base64,${fileData}`, type });
-            }
+        const docXmlFile = zip.file("word/document.xml");
+        
+        if (!docXmlFile) {
+            throw new Error("Invalid .docx file: word/document.xml not found.");
         }
         
-        setProgressMessage('Processing document content...');
-        const contentFile = zip.file('word/document.xml');
-        if (!contentFile) throw new Error('Could not find document.xml in the DOCX file.');
+        const docXmlText = await docXmlFile.async("string");
+        
+        setProgressMessage('Extracting text content...');
 
-        const contentText = await contentFile.async('string');
         const parser = new DOMParser();
-        const xml = parser.parseFromString(contentText, 'application/xml');
-        const paragraphs = xml.getElementsByTagName('w:p');
+        const xmlDoc = parser.parseFromString(docXmlText, "text/xml");
+        const pNodes = xmlDoc.getElementsByTagName("w:p");
+        const paragraphs: string[] = [];
+        for (let i = 0; i < pNodes.length; i++) {
+            const tNodes = pNodes[i].getElementsByTagName('w:t');
+            let pText = '';
+            for (let j = 0; j < tNodes.length; j++) {
+                pText += tNodes[j].textContent;
+            }
+            paragraphs.push(pText);
+        }
+        const fullText = paragraphs.join('\n');
 
-        const checkAndAddPage = (neededHeight: number) => {
-            if (y + neededHeight > doc.internal.pageSize.getHeight() - margin) {
+        setProgressMessage('Creating PDF document...');
+        const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+        doc.setFontSize(12);
+        const margin = 50;
+        const usableWidth = doc.internal.pageSize.getWidth() - 2 * margin;
+        
+        const lines = doc.splitTextToSize(fullText, usableWidth);
+        
+        let y = margin;
+        lines.forEach((line: string, index: number) => {
+            if (index > 0 && y > doc.internal.pageSize.getHeight() - margin - doc.getLineHeight()) {
                 doc.addPage();
                 y = margin;
             }
-        };
-
-        for (let i = 0; i < paragraphs.length; i++) {
-            const p = paragraphs[i];
-            const runs = Array.from(p.childNodes).filter(node => node.nodeName === 'w:r');
-            let paragraphText = '';
-            
-            runs.forEach(run => {
-                const textElements = (run as Element).getElementsByTagName('w:t');
-                if (textElements.length > 0) {
-                     paragraphText += Array.from(textElements).map(t => t.textContent).join('');
-                }
-            });
-
-            if (paragraphText.trim().length > 0) {
-                const lines = doc.splitTextToSize(paragraphText, pdfWidth);
-                checkAndAddPage(lines.length * doc.getLineHeight());
-                doc.text(lines, margin, y);
-                y += lines.length * doc.getLineHeight();
-            }
-
-            runs.forEach(run => {
-                 const blips = (run as Element).getElementsByTagName('a:blip');
-                 if (blips.length > 0) {
-                    const embedId = blips[0].getAttribute('r:embed');
-                    if (embedId && images.has(embedId)) {
-                        const imageData = images.get(embedId)!;
-                        let imgWidth = 300;
-                        let imgHeight = 200;
-                        const extent = (run as Element).getElementsByTagName('a:ext')[0];
-                        if (extent) {
-                            const cx = parseInt(extent.getAttribute('cx') || '0');
-                            const cy = parseInt(extent.getAttribute('cy') || '0');
-                            if (cx > 0 && cy > 0) {
-                                imgWidth = cx / 12700;
-                                imgHeight = cy / 12700;
-                                if (imgWidth > pdfWidth) {
-                                    const ratio = pdfWidth / imgWidth;
-                                    imgWidth = pdfWidth;
-                                    imgHeight = imgHeight * ratio;
-                                }
-                            }
-                        }
-
-                        checkAndAddPage(imgHeight);
-                        doc.addImage(imageData.data, imageData.type, margin, y, imgWidth, imgHeight);
-                        y += imgHeight + doc.getLineHeight();
-                    }
-                }
-            });
-        }
+            doc.text(line, margin, y);
+            y += doc.getLineHeight();
+        });
 
         setProgressMessage('Finalizing PDF...');
         const pdfBlob = doc.output('blob');
         const url = URL.createObjectURL(pdfBlob);
-        const originalName = wordFile.name;
-        const baseName = originalName.substring(0, originalName.lastIndexOf('.'));
         
         setPdfUrl(url);
-        setDownloadName(`${baseName}.pdf`);
+        setDownloadName(wordFile.name.replace(/\.docx?$/i, '.pdf'));
         incrementConversions();
         setWordFile(null);
 
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred during conversion. The file may be corrupt or use unsupported features.");
+      setError(err instanceof Error ? err.message : "Failed to convert document. The file may be corrupt or not a valid .docx file.");
     } finally {
       setIsConverting(false);
       setProgressMessage('');
@@ -253,11 +190,11 @@ export const WordToPdfPage: React.FC<WordToPdfPageProps> = ({ onNavigate }) => {
         <div className="w-full flex flex-col items-center justify-center">
             <h1 className="text-3xl md:text-4xl font-bold mb-2 text-black dark:text-white">Word to PDF Converter</h1>
             <p className="text-md md:text-lg text-gray-500 dark:text-gray-400 mb-8 max-w-2xl text-center">
-                Convert Microsoft Word (.docx) documents to PDF files right in your browser. Your files are never uploaded to a server.
+                Convert your Microsoft Word (.docx) documents into high-quality, professional PDF files.
             </p>
-            <div className="bg-yellow-200 dark:bg-yellow-900/50 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-lg flex items-center shadow-lg">
+             <div className="bg-yellow-200 dark:bg-yellow-900/50 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-lg flex items-center shadow-lg">
                 <AlertTriangleIcon className="w-5 h-5 mr-3 flex-shrink-0" />
-                <span className="block sm:inline"><b>Note:</b> This converter preserves text and images. Complex layouts, tables, and special formatting may not be fully retained.</span>
+                <span className="block sm:inline"><b>Note:</b> This tool extracts text from your .docx file. It does not preserve complex formatting, images, or tables.</span>
             </div>
             {error && (
             <div className="bg-red-200 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative mb-6 w-full max-w-lg flex items-center shadow-lg">

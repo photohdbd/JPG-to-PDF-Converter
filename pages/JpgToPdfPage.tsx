@@ -12,9 +12,8 @@ declare const jspdf: any;
 export type AppFile = {
   id: string;
   file: File;
-  type: 'image' | 'text' | 'unsupported';
+  type: 'image' | 'unsupported';
   previewUrl?: string;
-  textContent?: string;
 };
 
 interface JpgToPdfPageProps {
@@ -62,7 +61,7 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
         const baseFile = {
           id: `${file.name}-${file.lastModified}-${Math.random()}`,
           file,
-          type: fileType as 'image' | 'unsupported',
+          type: fileType,
         };
 
         if (fileType === 'image') {
@@ -99,66 +98,58 @@ export const JpgToPdfPage: React.FC<JpgToPdfPageProps> = ({ onNavigate }) => {
 
     try {
       const { jsPDF } = jspdf;
-      const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'px',
-        format: 'a4',
-        hotfixes: ['px_scaling'],
-      });
-      const pdfWidth = doc.internal.pageSize.getWidth();
-      const pdfHeight = doc.internal.pageSize.getHeight();
+      let doc: any = null; // Will be initialized on the first image
 
       for (let i = 0; i < filesToConvert.length; i++) {
         const file = filesToConvert[i];
         setProgressMessage(`Processing image ${i + 1} of ${filesToConvert.length}...`);
 
-        const reader = new FileReader();
         const promise = new Promise<{ data: string, width: number, height: number }>((resolve, reject) => {
-          reader.onload = (event) => {
-            if (event.target?.result) {
-              const img = new Image();
-              img.onload = () => {
-                resolve({ data: event.target!.result as string, width: img.width, height: img.height });
-              };
-              img.onerror = () => reject(new Error(`Could not load image: ${file.file.name}`));
-              img.src = event.target.result as string;
-            } else {
-              reject(new Error(`Could not read file: ${file.file.name}`));
-            }
-          };
-          reader.onerror = () => reject(new Error(`File reading error for ${file.file.name}`));
-          reader.readAsDataURL(file.file);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                const img = new Image();
+                img.onload = () => {
+                    resolve({ data: event.target!.result as string, width: img.width, height: img.height });
+                };
+                img.onerror = () => reject(new Error(`Could not load image: ${file.file.name}`));
+                img.src = event.target.result as string;
+                } else {
+                reject(new Error(`Could not read file: ${file.file.name}`));
+                }
+            };
+            reader.onerror = () => reject(new Error(`File reading error for ${file.file.name}`));
+            reader.readAsDataURL(file.file);
         });
 
         const { data, width, height } = await promise;
-        
-        const aspectRatio = width / height;
-        let imgWidth = pdfWidth;
-        let imgHeight = pdfWidth / aspectRatio;
+        const orientation = width > height ? 'l' : 'p';
 
-        if (imgHeight > pdfHeight) {
-            imgHeight = pdfHeight;
-            imgWidth = pdfHeight * aspectRatio;
-        }
-
-        const x = (pdfWidth - imgWidth) / 2;
-        const y = (pdfHeight - imgHeight) / 2;
-
-        if (i > 0) {
-          doc.addPage();
+        if (i === 0) {
+          doc = new jsPDF({
+            orientation,
+            unit: 'px',
+            format: [width, height],
+          });
+        } else {
+          doc.addPage([width, height], orientation);
         }
         
-        doc.addImage(data, 'JPEG', x, y, imgWidth, imgHeight);
+        doc.addImage(data, 'JPEG', 0, 0, width, height);
       }
 
-      setProgressMessage('Finalizing PDF...');
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
-      
-      setPdfUrl(url);
-      setDownloadName('lolopdf_converted.pdf');
-      incrementConversions(filesToConvert.length);
-      setAppFiles([]);
+      if (doc) {
+        setProgressMessage('Finalizing PDF...');
+        const pdfBlob = doc.output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+        
+        setPdfUrl(url);
+        setDownloadName('lolopdf_converted.pdf');
+        incrementConversions(filesToConvert.length);
+        setAppFiles([]);
+      } else {
+        throw new Error("PDF document could not be created.");
+      }
 
     } catch (err) {
       console.error(err);
